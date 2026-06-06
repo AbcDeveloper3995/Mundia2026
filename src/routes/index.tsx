@@ -7,6 +7,8 @@ import { RegisterPage } from '@/modules/auth/pages/RegisterPage';
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage';
 import { GroupsManager } from '@/modules/admin/pages/GroupsManager';
 import { TeamsManager } from '@/modules/admin/pages/TeamsManager';
+import { MatchesManager } from '@/modules/admin/pages/MatchesManager';
+import { ResultsPage } from '@/modules/dashboard/pages/ResultsPage';
 import { Box, CircularProgress } from '@mui/material';
 
 const ProtectedRoute = () => {
@@ -70,6 +72,8 @@ const router = createBrowserRouter([
           { index: true, element: <DashboardPage /> },
           { path: 'groups', element: <GroupsManager /> },
           { path: 'teams', element: <TeamsManager /> },
+          { path: 'matches', element: <MatchesManager /> },
+          { path: 'results', element: <ResultsPage /> },
         ],
       },
     ],

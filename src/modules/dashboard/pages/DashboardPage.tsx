@@ -22,9 +22,12 @@ export const DashboardPage = () => {
               <Typography variant="h5" gutterBottom sx={{ color: 'secondary.main', fontWeight: 700 }}>
                 Próximos Partidos
               </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Aún no hay partidos programados. Vuelve más tarde para empezar a hacer tus predicciones.
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                Mantente al tanto de la tabla de posiciones y de las eliminatorias a medida que avanza el Mundial.
               </Typography>
+              <Button component={RouterLink} to="/dashboard/results" variant="contained" color="secondary" sx={{ fontWeight: 800 }}>
+                Ver Resultados y Tablas
+              </Button>
             </Paper>
           </Grid>
           
@@ -37,12 +40,15 @@ export const DashboardPage = () => {
                 <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
                   Desde aquí podrás gestionar los partidos, resultados y las puntuaciones de todos los participantes.
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   <Button component={RouterLink} to="/dashboard/groups" variant="outlined" color="error">
                     Gestionar Grupos
                   </Button>
                   <Button component={RouterLink} to="/dashboard/teams" variant="outlined" color="error">
                     Gestionar Equipos
+                  </Button>
+                  <Button component={RouterLink} to="/dashboard/matches" variant="contained" color="error" sx={{ fontWeight: 800 }}>
+                    Motor de Partidos
                   </Button>
                 </Box>
               </Paper>
