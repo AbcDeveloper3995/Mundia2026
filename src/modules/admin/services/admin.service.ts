@@ -84,3 +84,21 @@ export const updateMatch = async (id: string, updates: Partial<Match>) => {
   if (error) throw error;
   return data;
 };
+
+export const resetKnockoutStage = async () => {
+  const { error } = await supabase
+    .from('matches')
+    .update({
+      home_team_id: null,
+      away_team_id: null,
+      home_score: null,
+      away_score: null,
+      home_penalties: null,
+      away_penalties: null,
+      is_finished: false
+    })
+    .neq('stage', 'GROUP');
+
+  if (error) throw error;
+  return true;
+};

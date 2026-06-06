@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Grid, CircularProgress, Alert, MenuItem, Select, FormControl, InputLabel, TextField, Switch, FormControlLabel, Tabs, Tab, Button } from '@mui/material';
-import { fetchGroups, fetchMatchesByGroup, fetchAllMatches, fetchTeams, updateMatch, type Group, type Match, type Team } from '@/modules/admin/services/admin.service';
+import { Box, Typography, Paper, Grid, CircularProgress, Alert, MenuItem, Select, FormControl, InputLabel, TextField, Switch, FormControlLabel, Tabs, Tab, Button, Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import { fetchGroups, fetchMatchesByGroup, fetchAllMatches, fetchTeams, updateMatch, resetKnockoutStage, type Group, type Match, type Team } from '@/modules/admin/services/admin.service';
 import { calculateGroupStandings, generateBracket, getWinner, type TeamStanding } from '@/utils/tournament.rules';
+import { TournamentBracket } from '../components/TournamentBracket';
 import { motion } from 'framer-motion';
 
 export const MatchesManager = () => {
@@ -16,6 +18,8 @@ export const MatchesManager = () => {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [isBracketOpen, setIsBracketOpen] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -167,6 +171,20 @@ export const MatchesManager = () => {
     }
   };
 
+  const handleResetKnockout = async () => {
+    if (window.confirm('¿Estás seguro de que quieres borrar TODOS los resultados de la Fase Eliminatoria? Los grupos se mantendrán intactos.')) {
+      try {
+        setLoading(true);
+        await resetKnockoutStage();
+        await loadInitialData();
+      } catch (err: any) {
+        setError("Error al reiniciar: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   if (loading) return <CircularProgress color="primary" />;
 
   const currentGroup = groups.find(g => g.id === selectedGroup);
@@ -293,7 +311,17 @@ export const MatchesManager = () => {
 
       {tab === 1 && (
         <Box>
-          <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: 'secondary.main' }}>Fase Eliminatoria</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: 'secondary.main' }}>Fase Eliminatoria</Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button variant="outlined" color="secondary" onClick={() => setIsBracketOpen(true)} sx={{ fontWeight: 800 }}>
+                Ver Árbol del Torneo
+              </Button>
+              <Button variant="outlined" color="error" onClick={handleResetKnockout}>
+                Reiniciar Esquema
+              </Button>
+            </Box>
+          </Box>
           <Grid container spacing={4}>
             {['R32', 'R16', 'QF', 'SF', '3RD', 'FINAL'].map(stage => {
               const stageMatches = knockoutMatches.filter(m => m.stage === stage);
@@ -354,6 +382,17 @@ export const MatchesManager = () => {
           </Grid>
         </Box>
       )}
+
+      {/* Modal del Árbol del Torneo */}
+      <Dialog open={isBracketOpen} onClose={() => setIsBracketOpen(false)} maxWidth="xl" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#111', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 900 }}>Llaves del Mundial</Typography>
+          <IconButton onClick={() => setIsBracketOpen(false)} sx={{ color: 'white' }}><CloseIcon /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: '#000', p: 0 }}>
+          <TournamentBracket matches={knockoutMatches} teams={allTeams} />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

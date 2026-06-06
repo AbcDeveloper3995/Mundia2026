@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Grid, CircularProgress, Alert } from '@mui/material';
-import { fetchGroups, fetchAllMatches, type Group, type Match } from '@/modules/admin/services/admin.service';
+import { Box, Typography, Paper, Grid, CircularProgress, Alert, Button, Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import { fetchGroups, fetchAllMatches, fetchTeams, type Group, type Match, type Team } from '@/modules/admin/services/admin.service';
 import { calculateGroupStandings, type TeamStanding } from '@/utils/tournament.rules';
+import { TournamentBracket } from '@/modules/admin/components/TournamentBracket';
 import { motion } from 'framer-motion';
 
 export const ResultsPage = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [isBracketOpen, setIsBracketOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -17,12 +22,14 @@ export const ResultsPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [groupsData, matchesData] = await Promise.all([
+      const [groupsData, matchesData, teamsData] = await Promise.all([
         fetchGroups(),
-        fetchAllMatches()
+        fetchAllMatches(),
+        fetchTeams()
       ]);
       setGroups(groupsData);
       setMatches(matchesData);
+      setTeams(teamsData);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -38,9 +45,12 @@ export const ResultsPage = () => {
         <Typography variant="h2" sx={{ color: 'primary.main', fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2 }}>
           Resultados Oficiales
         </Typography>
-        <Typography variant="subtitle1" sx={{ color: 'text.secondary', mt: 1 }}>
+        <Typography variant="subtitle1" sx={{ color: 'text.secondary', mt: 1, mb: 3 }}>
           Tablas de Posiciones y Llaves del Torneo en Tiempo Real
         </Typography>
+        <Button variant="contained" color="secondary" size="large" onClick={() => setIsBracketOpen(true)} sx={{ fontWeight: 800 }}>
+          Ver Árbol del Torneo (Eliminatorias)
+        </Button>
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
@@ -91,6 +101,16 @@ export const ResultsPage = () => {
           );
         })}
       </Grid>
+
+      <Dialog open={isBracketOpen} onClose={() => setIsBracketOpen(false)} maxWidth="xl" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#111', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 900 }}>Llaves del Mundial</Typography>
+          <IconButton onClick={() => setIsBracketOpen(false)} sx={{ color: 'white' }}><CloseIcon /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: '#000', p: 0 }}>
+          <TournamentBracket matches={matches.filter(m => m.stage !== 'GROUP')} teams={teams} />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };
