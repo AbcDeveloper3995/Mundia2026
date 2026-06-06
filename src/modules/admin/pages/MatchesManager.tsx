@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, CircularProgress, Alert, MenuItem, Select, FormControl, InputLabel, TextField, Switch, FormControlLabel, Tabs, Tab, Button, Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { fetchGroups, fetchMatchesByGroup, fetchAllMatches, fetchTeams, updateMatch, resetKnockoutStage, type Group, type Match, type Team } from '@/modules/admin/services/admin.service';
+import { fetchGroups, fetchMatchesByGroup, fetchAllMatches, fetchTeams, updateMatch, resetKnockoutStage, fetchOfficialAwards, saveOfficialAwards, type Group, type Match, type Team, type OfficialAwards } from '@/modules/admin/services/admin.service';
 import { calculateGroupStandings, generateBracket, getWinner, type TeamStanding } from '@/utils/tournament.rules';
 import { TournamentBracket } from '../components/TournamentBracket';
+import { recalculateAllLeaderboards } from '@/modules/predictions/services/predictions.service';
+import { TOP_PLAYERS } from '@/utils/players.data';
 import { motion } from 'framer-motion';
 
 export const MatchesManager = () => {
@@ -15,6 +17,9 @@ export const MatchesManager = () => {
   const [standings, setStandings] = useState<TeamStanding[]>([]);
   
   const [knockoutMatches, setKnockoutMatches] = useState<Match[]>([]);
+  const [officialAwards, setOfficialAwards] = useState<OfficialAwards>({
+    top_scorer: null, top_assist: null, mvp: null, champion_team_id: null, runner_up_team_id: null, third_place_team_id: null
+  });
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,13 +33,15 @@ export const MatchesManager = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [groupsData, teamsData, matchesData] = await Promise.all([
+      const [groupsData, teamsData, matchesData, awardsData] = await Promise.all([
         fetchGroups(),
         fetchTeams(),
-        fetchAllMatches()
+        fetchAllMatches(),
+        fetchOfficialAwards()
       ]);
       setGroups(groupsData);
       setAllTeams(teamsData);
+      if (awardsData) setOfficialAwards(awardsData);
       
       if (groupsData.length > 0) {
         setSelectedGroup(groupsData[0].id);
@@ -134,7 +141,6 @@ export const MatchesManager = () => {
               const nextMatch = nextStageMatches[nextMatchIndex];
               if (nextMatch) {
                 await updateMatch(nextMatch.id, isHome ? { home_team_id: winnerId } : { away_team_id: winnerId });
-                // Recargar para ver el cambio
                 loadInitialData();
               }
             }
@@ -185,6 +191,29 @@ export const MatchesManager = () => {
     }
   };
 
+  const handleSaveOfficialAwards = async () => {
+    try {
+      await saveOfficialAwards(officialAwards);
+      alert('Premios oficiales guardados.');
+    } catch (err: any) {
+      alert('Error guardando premios: ' + err.message);
+    }
+  };
+
+  const handleRecalculateLeaderboard = async () => {
+    if (window.confirm("¿Estás seguro? Esto calculará la puntuación de TODOS los participantes basándose en los resultados reales actuales. Esto puede tardar unos segundos.")) {
+      try {
+        setLoading(true);
+        await recalculateAllLeaderboards();
+        alert('Leaderboard recalculado con éxito.');
+      } catch (err: any) {
+        setError('Error al recalcular: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   if (loading) return <CircularProgress color="primary" />;
 
   const currentGroup = groups.find(g => g.id === selectedGroup);
@@ -195,9 +224,14 @@ export const MatchesManager = () => {
         <Typography variant="h3" sx={{ color: 'primary.main', fontWeight: 800 }}>
           Motor del Torneo
         </Typography>
-        <Button variant="contained" color="secondary" onClick={handleArmarLlaves} sx={{ fontWeight: 800 }}>
-          Cerrar Grupos y Armar Llaves
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button variant="contained" color="secondary" onClick={handleArmarLlaves} sx={{ fontWeight: 800 }}>
+            Cerrar Grupos y Armar Llaves
+          </Button>
+          <Button variant="contained" color="primary" onClick={handleRecalculateLeaderboard} sx={{ fontWeight: 800 }}>
+            Recalcular Leaderboard Global
+          </Button>
+        </Box>
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
@@ -205,13 +239,14 @@ export const MatchesManager = () => {
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 4 }}>
         <Tab label="Fase de Grupos" sx={{ fontWeight: 800 }} />
         <Tab label="Fase Eliminatoria" sx={{ fontWeight: 800 }} />
+        <Tab label="Premios Oficiales" sx={{ fontWeight: 800 }} />
       </Tabs>
 
       {tab === 0 && (
         <Grid container spacing={4}>
           {/* Tabla de Posiciones */}
           <Grid item xs={12} lg={8}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
               <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>Tabla de Posiciones</Typography>
               <FormControl variant="outlined" size="small" sx={{ minWidth: 150 }}>
                 <Select value={selectedGroup} onChange={(e) => handleGroupChange(e.target.value)}>
@@ -292,7 +327,6 @@ export const MatchesManager = () => {
                           size="small" 
                           color="primary" 
                           onClick={() => {
-                            // Fuerza el recálculo (aunque el input ya haya guardado en background) para dar feedback visual
                             updateMatch(match.id, { home_score: match.home_score, away_score: match.away_score });
                             alert('Resultado guardado correctamente');
                           }}
@@ -380,6 +414,70 @@ export const MatchesManager = () => {
               );
             })}
           </Grid>
+        </Box>
+      )}
+
+      {tab === 2 && (
+        <Box sx={{ maxWidth: 800, mx: 'auto' }}>
+          <Paper sx={{ p: 4, borderRadius: 3, border: '1px solid rgba(255,255,255,0.1)' }}>
+            <Typography variant="h5" sx={{ mb: 4, fontWeight: 800, color: 'primary.main', textAlign: 'center' }}>
+              Definir Ganadores Reales
+            </Typography>
+
+            <Grid container spacing={4}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6" sx={{ mb: 2, color: 'secondary.main' }}>Premios Individuales</Typography>
+                <FormControl fullWidth sx={{ mb: 3 }}>
+                  <InputLabel>Máximo Goleador</InputLabel>
+                  <Select value={officialAwards.top_scorer || ''} onChange={(e) => setOfficialAwards({...officialAwards, top_scorer: e.target.value})} label="Máximo Goleador">
+                    {TOP_PLAYERS.map(p => <MenuItem key={p.id} value={p.name}>{p.name} ({p.country})</MenuItem>)}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth sx={{ mb: 3 }}>
+                  <InputLabel>Máximo Asistente</InputLabel>
+                  <Select value={officialAwards.top_assist || ''} onChange={(e) => setOfficialAwards({...officialAwards, top_assist: e.target.value})} label="Máximo Asistente">
+                    {TOP_PLAYERS.map(p => <MenuItem key={p.id} value={p.name}>{p.name} ({p.country})</MenuItem>)}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth sx={{ mb: 3 }}>
+                  <InputLabel>MVP del Torneo</InputLabel>
+                  <Select value={officialAwards.mvp || ''} onChange={(e) => setOfficialAwards({...officialAwards, mvp: e.target.value})} label="MVP del Torneo">
+                    {TOP_PLAYERS.map(p => <MenuItem key={p.id} value={p.name}>{p.name} ({p.country})</MenuItem>)}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6" sx={{ mb: 2, color: 'secondary.main' }}>Podio del Torneo</Typography>
+                <FormControl fullWidth sx={{ mb: 3 }}>
+                  <InputLabel>Campeón (20 pts)</InputLabel>
+                  <Select value={officialAwards.champion_team_id || ''} onChange={(e) => setOfficialAwards({...officialAwards, champion_team_id: e.target.value})} label="Campeón (20 pts)">
+                    {allTeams.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth sx={{ mb: 3 }}>
+                  <InputLabel>Subcampeón (10 pts)</InputLabel>
+                  <Select value={officialAwards.runner_up_team_id || ''} onChange={(e) => setOfficialAwards({...officialAwards, runner_up_team_id: e.target.value})} label="Subcampeón (10 pts)">
+                    {allTeams.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth sx={{ mb: 3 }}>
+                  <InputLabel>Tercer Lugar (5 pts)</InputLabel>
+                  <Select value={officialAwards.third_place_team_id || ''} onChange={(e) => setOfficialAwards({...officialAwards, third_place_team_id: e.target.value})} label="Tercer Lugar (5 pts)">
+                    {allTeams.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            <Button variant="contained" color="primary" fullWidth size="large" onClick={handleSaveOfficialAwards} sx={{ mt: 2, fontWeight: 800 }}>
+              Guardar Resultados Oficiales
+            </Button>
+          </Paper>
         </Box>
       )}
 

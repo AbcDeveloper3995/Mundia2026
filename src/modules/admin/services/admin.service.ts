@@ -31,6 +31,16 @@ export interface Match {
   match_date: string | null;
 }
 
+export interface OfficialAwards {
+  id?: string;
+  top_scorer: string | null;
+  top_assist: string | null;
+  mvp: string | null;
+  champion_team_id: string | null;
+  runner_up_team_id: string | null;
+  third_place_team_id: string | null;
+}
+
 export const fetchGroups = async (): Promise<Group[]> => {
   const { data, error } = await supabase.from('groups').select('*, teams(*)').order('name');
   if (error) throw error;
@@ -101,4 +111,21 @@ export const resetKnockoutStage = async () => {
 
   if (error) throw error;
   return true;
+};
+
+export const fetchOfficialAwards = async (): Promise<OfficialAwards | null> => {
+  const { data, error } = await supabase.from('official_awards').select('*').limit(1).single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data as OfficialAwards | null;
+};
+
+export const saveOfficialAwards = async (awards: OfficialAwards) => {
+  const existing = await fetchOfficialAwards();
+  if (existing && existing.id) {
+    const { error } = await supabase.from('official_awards').update(awards).eq('id', existing.id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('official_awards').insert(awards);
+    if (error) throw error;
+  }
 };

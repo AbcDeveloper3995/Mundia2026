@@ -20,14 +20,22 @@ export const DashboardPage = () => {
           <Grid item xs={12} md={role === 'ADMIN' ? 6 : 12}>
             <Paper sx={{ p: 4, height: '100%', borderRadius: 3 }}>
               <Typography variant="h5" gutterBottom sx={{ color: 'secondary.main', fontWeight: 700 }}>
-                Próximos Partidos
+                Modo Participante
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                Mantente al tanto de la tabla de posiciones y de las eliminatorias a medida que avanza el Mundial.
+                Mantente al tanto de la tabla de posiciones, haz tus predicciones y compite en el ranking global.
               </Typography>
-              <Button component={RouterLink} to="/dashboard/results" variant="contained" color="secondary" sx={{ fontWeight: 800 }}>
-                Ver Resultados y Tablas
-              </Button>
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Button component={RouterLink} to="/dashboard/predictions" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
+                  Mis Predicciones
+                </Button>
+                <Button component={RouterLink} to="/dashboard/leaderboard" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
+                  Ver Ranking Global
+                </Button>
+                <Button component={RouterLink} to="/dashboard/results" variant="outlined" color="secondary" sx={{ fontWeight: 800 }}>
+                  Ver Resultados Oficiales
+                </Button>
+              </Box>
             </Paper>
           </Grid>
           
