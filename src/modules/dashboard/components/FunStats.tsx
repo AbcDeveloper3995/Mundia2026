@@ -3,13 +3,13 @@ import { motion } from 'framer-motion';
 
 // Iconos para cada premio
 const trophyConfig = {
-  nostradamus: { title: '🔮 Nostradamus', desc: 'Más marcadores exactos', color: '#9c27b0' },
-  suertudo: { title: '🎲 El Suertudo', desc: 'Más puntos sin marcadores exactos', color: '#ff9800' },
-  mufa: { title: '💀 El Mufa', desc: 'Peor porcentaje de aciertos', color: '#f44336' },
+  nostradamus: { title: '🔮 El Tiza', desc: 'Más marcadores exactos', color: '#9c27b0' },
+  suertudo: { title: '🎲 El Prospecto', desc: 'Más puntos sin marcadores exactos', color: '#ff9800' },
+  mufa: { title: '💀 El Merma', desc: 'Peor porcentaje de aciertos', color: '#f44336' },
   casiCasi: { title: '😭 Casi Casi', desc: 'A un gol de acertar exacto', color: '#ffeb3b' },
-  francotirador: { title: '🎯 Francotirador', desc: 'Mejor porcentaje de exactos', color: '#00e676' },
+  francotirador: { title: '🎯 Durakito', desc: 'Mejor porcentaje de exactos', color: '#00e676' },
   rachaActual: { title: '🔥 Racha Actual', desc: 'Aciertos seguidos', color: '#ff5722' },
-  reyEliminatorias: { title: '👑 Rey de Eliminatorias', desc: 'Más puntos en cruces', color: '#ffd700' },
+  reyEliminatorias: { title: '👑 Anda Pro', desc: 'Más puntos en cruces', color: '#ffd700' },
   visionario: { title: '🧠 Visionario', desc: 'Acertó MVP/Campeón', color: '#2196f3' },
 };
 

@@ -18,6 +18,7 @@ export const PredictionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState(0);
+  const [awardsLocked, setAwardsLocked] = useState(false);
 
   useEffect(() => {
     if (user) loadData(user.id);
@@ -37,7 +38,12 @@ export const PredictionsPage = () => {
       setTeams(teamsData);
       setGroups(groupsData);
       setPredictions(predsData);
-      if (awardsData) setAwards(awardsData);
+      if (awardsData) {
+        setAwards(awardsData);
+        if (awardsData.top_scorer || awardsData.top_assist || awardsData.mvp) {
+          setAwardsLocked(true);
+        }
+      }
       else setAwards({ user_id: userId, top_scorer: '', top_assist: '', mvp: '' });
     } catch (err: any) {
       setError(err.message);
@@ -95,12 +101,22 @@ export const PredictionsPage = () => {
         mvp: awards.mvp || null
       });
       alert("¡Premios guardados correctamente!");
+      setAwardsLocked(true);
     } catch (err: any) {
       alert("Error al guardar premios: " + err.message);
     }
   };
 
   // ---- MOTOR DE SIMULACIÓN LOCAL ----
+  const allGroupMatchesPredicted = useMemo(() => {
+    const groupMatches = matches.filter(m => m.stage === 'GROUP');
+    if (groupMatches.length === 0) return false;
+    return groupMatches.every(m => {
+      const pred = predictions.find(p => p.match_id === m.id);
+      return pred && pred.predicted_home_score !== -1 && pred.predicted_away_score !== -1;
+    });
+  }, [matches, predictions]);
+
   const simulatedMatches = useMemo(() => {
     let sim = matches.map(m => ({ ...m })); // clon profundo de primer nivel
     
@@ -360,7 +376,7 @@ export const PredictionsPage = () => {
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 4, borderBottom: 1, borderColor: 'divider' }} textColor="secondary" indicatorColor="secondary">
         <Tab label="Fase de Grupos" sx={{ fontWeight: 700 }} />
-        <Tab label="Fase Eliminatoria" sx={{ fontWeight: 700 }} />
+        <Tab label="Fase Eliminatoria" sx={{ fontWeight: 700 }} disabled={!allGroupMatchesPredicted} />
         <Tab label="Premios del Torneo" sx={{ fontWeight: 700 }} />
       </Tabs>
 
@@ -414,6 +430,7 @@ export const PredictionsPage = () => {
                 value={awards.top_scorer || ''} 
                 onChange={(e) => setAwards({...awards, top_scorer: e.target.value})}
                 label="Máximo Goleador"
+                disabled={awardsLocked}
               >
                 {TOP_PLAYERS.map(p => (
                   <MenuItem key={p.id} value={p.name}>{p.name} ({p.country})</MenuItem>
@@ -427,6 +444,7 @@ export const PredictionsPage = () => {
                 value={awards.top_assist || ''} 
                 onChange={(e) => setAwards({...awards, top_assist: e.target.value})}
                 label="Máximo Asistente"
+                disabled={awardsLocked}
               >
                 {TOP_PLAYERS.map(p => (
                   <MenuItem key={p.id} value={p.name}>{p.name} ({p.country})</MenuItem>
@@ -440,6 +458,7 @@ export const PredictionsPage = () => {
                 value={awards.mvp || ''} 
                 onChange={(e) => setAwards({...awards, mvp: e.target.value})}
                 label="MVP del Torneo"
+                disabled={awardsLocked}
               >
                 {TOP_PLAYERS.map(p => (
                   <MenuItem key={p.id} value={p.name}>{p.name} ({p.country})</MenuItem>
@@ -447,8 +466,8 @@ export const PredictionsPage = () => {
               </Select>
             </FormControl>
 
-            <Button variant="contained" color="primary" fullWidth size="large" onClick={handleSaveAwards} sx={{ fontWeight: 800 }}>
-              Guardar Premios
+            <Button variant="contained" color="primary" fullWidth size="large" onClick={handleSaveAwards} sx={{ fontWeight: 800 }} disabled={awardsLocked}>
+              {awardsLocked ? 'Selección Bloqueada' : 'Guardar Premios'}
             </Button>
           </Paper>
         </Box>
