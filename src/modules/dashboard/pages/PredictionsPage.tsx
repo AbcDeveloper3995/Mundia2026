@@ -154,6 +154,80 @@ export const PredictionsPage = () => {
     return sim;
   }, [matches, predictions, groups]);
 
+  const getPointsBreakdown = (match: Match, prediction?: Prediction) => {
+    if (!prediction) return { breakdown: [], total: 0 };
+    const breakdown: { points: number, reason: string }[] = [];
+    const realMatch = matches.find(m => m.id === match.id);
+    if (!realMatch) return { breakdown: [], total: 0 };
+
+    let total = 0;
+    const addPoints = (pts: number, reason: string) => {
+      breakdown.push({ points: pts, reason });
+      total += pts;
+    };
+
+    const isKnockout = realMatch.stage !== 'GROUP';
+
+    // Reglas eliminatorias
+    if (isKnockout) {
+      const stageMatches = matches.filter(m => m.stage === realMatch.stage);
+      const teamsInStage = new Set<string>();
+      stageMatches.forEach(sm => {
+        if (sm.home_team_id) teamsInStage.add(sm.home_team_id);
+        if (sm.away_team_id) teamsInStage.add(sm.away_team_id);
+      });
+
+      if (prediction.predicted_home_team_id && teamsInStage.has(prediction.predicted_home_team_id)) {
+        const teamName = teams.find(t => t.id === prediction.predicted_home_team_id)?.name || 'Equipo';
+        addPoints(2, `${teamName} clasificó a esta ronda`);
+      }
+      if (prediction.predicted_away_team_id && teamsInStage.has(prediction.predicted_away_team_id)) {
+        const teamName = teams.find(t => t.id === prediction.predicted_away_team_id)?.name || 'Equipo';
+        addPoints(2, `${teamName} clasificó a esta ronda`);
+      }
+
+      if (realMatch.home_team_id && realMatch.away_team_id && prediction.predicted_home_team_id && prediction.predicted_away_team_id) {
+        if (
+          (prediction.predicted_home_team_id === realMatch.home_team_id && prediction.predicted_away_team_id === realMatch.away_team_id) ||
+          (prediction.predicted_home_team_id === realMatch.away_team_id && prediction.predicted_away_team_id === realMatch.home_team_id)
+        ) {
+          addPoints(5, `Acertaste el enfrentamiento exacto`);
+        }
+      }
+    }
+
+    if (realMatch.is_finished && realMatch.home_score !== null && realMatch.away_score !== null) {
+      let canEarnScorePoints = true;
+      let realHomeScore = realMatch.home_score;
+      let realAwayScore = realMatch.away_score;
+
+      if (isKnockout) {
+        canEarnScorePoints = false;
+        if (prediction.predicted_home_team_id === realMatch.home_team_id && prediction.predicted_away_team_id === realMatch.away_team_id) {
+          canEarnScorePoints = true;
+        } else if (prediction.predicted_home_team_id === realMatch.away_team_id && prediction.predicted_away_team_id === realMatch.home_team_id) {
+          canEarnScorePoints = true;
+          realHomeScore = realMatch.away_score;
+          realAwayScore = realMatch.home_score;
+        }
+      }
+
+      if (canEarnScorePoints) {
+        if (prediction.predicted_home_score === realHomeScore && prediction.predicted_away_score === realAwayScore) {
+          addPoints(5, `Resultado exacto del partido`);
+        } else {
+          const actualWinner = realHomeScore > realAwayScore ? 'HOME' : realHomeScore < realAwayScore ? 'AWAY' : 'DRAW';
+          const predWinner = prediction.predicted_home_score > prediction.predicted_away_score ? 'HOME' : prediction.predicted_home_score < prediction.predicted_away_score ? 'AWAY' : 'DRAW';
+          if (actualWinner === predWinner) {
+            addPoints(3, `Ganador o empate correcto`);
+          }
+        }
+      }
+    }
+
+    return { breakdown, total };
+  };
+
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress color="primary" /></Box>;
 
   const renderMatchCard = (match: Match) => {
@@ -165,18 +239,20 @@ export const PredictionsPage = () => {
     const hScore = prediction?.predicted_home_score === -1 ? '' : prediction?.predicted_home_score;
     const aScore = prediction?.predicted_away_score === -1 ? '' : prediction?.predicted_away_score;
 
-    // Is the real match finished? If so, lock predictions.
     const realMatch = matches.find(m => m.id === match.id);
     const isLocked = realMatch?.is_finished;
+    const { breakdown, total } = getPointsBreakdown(match, prediction);
 
     return (
       <Grid item xs={12} md={6} key={match.id}>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: isLocked ? 'rgba(255,255,255,0.1)' : 'primary.main', position: 'relative', overflow: 'hidden' }}>
             
-            {isLocked && (
-              <Box sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'rgba(255,255,255,0.1)', px: 2, py: 0.5, borderBottomLeftRadius: 8 }}>
-                <Typography variant="caption" sx={{ fontWeight: 800 }}>Partido Real Finalizado</Typography>
+            {realMatch && (
+              <Box sx={{ position: 'absolute', top: 0, right: 0, bgcolor: isLocked ? 'rgba(46, 125, 50, 0.2)' : 'rgba(255, 160, 0, 0.2)', px: 2, py: 0.5, borderBottomLeftRadius: 8 }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: isLocked ? 'success.light' : 'warning.light' }}>
+                  {isLocked ? 'Partido Finalizado' : 'Partido Pendiente'}
+                </Typography>
               </Box>
             )}
 
@@ -216,21 +292,34 @@ export const PredictionsPage = () => {
               </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2, pt: 2, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              {isLocked ? (
-                <Typography variant="body2" sx={{ color: (prediction?.points_earned || 0) > 0 ? 'success.main' : 'error.main', fontWeight: 800 }}>
-                  Puntos Obtenidos: {prediction?.points_earned || 0}
-                </Typography>
-              ) : (
-                <Typography variant="caption" color="text.secondary">
-                  Acierto exacto: 3pts | Ganador: 1pt
-                </Typography>
-              )}
+            <Box sx={{ display: 'flex', flexDirection: 'column', mt: 2, pt: 2, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {isLocked || breakdown.length > 0 ? (
+                  <Typography variant="body2" sx={{ color: total > 0 ? 'success.main' : 'error.main', fontWeight: 800 }}>
+                    Puntos Obtenidos: {total}
+                  </Typography>
+                ) : (
+                  <Typography variant="caption" color="text.secondary">
+                    Acierto exacto: 5pts | Ganador: 3pts
+                  </Typography>
+                )}
 
-              {!isLocked && home && away && (
-                <Button variant="contained" color="primary" size="small" onClick={() => handleSavePrediction(match.id, match.home_team_id, match.away_team_id)}>
-                  Guardar
-                </Button>
+                {!isLocked && home && away && (
+                  <Button variant="contained" color="primary" size="small" onClick={() => handleSavePrediction(match.id, match.home_team_id, match.away_team_id)}>
+                    Guardar
+                  </Button>
+                )}
+              </Box>
+
+              {breakdown.length > 0 && (
+                <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }}>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.5, display: 'block' }}>Desglose de puntos:</Typography>
+                  {breakdown.map((item, i) => (
+                    <Typography key={i} variant="caption" sx={{ display: 'block', color: 'success.light', fontWeight: 600 }}>
+                      ✓ +{item.points} pts: {item.reason}
+                    </Typography>
+                  ))}
+                </Box>
               )}
             </Box>
           </Paper>

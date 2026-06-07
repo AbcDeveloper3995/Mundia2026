@@ -134,61 +134,95 @@ export const recalculateAllLeaderboards = async () => {
     const userPreds = predictionsByUser[userId];
 
     for (const pred of userPreds) {
-      const realMatch = finishedMatches.find(m => m.id === pred.match_id);
       let matchPoints = 0;
+      const matchConfig = matches.find(m => m.id === pred.match_id);
+      if (!matchConfig) continue;
 
-      if (realMatch && realMatch.home_score !== null && realMatch.away_score !== null) {
-        // Regla 1: Resultado exacto (5 pts) / Ganador (3 pts)
-        if (pred.predicted_home_score === realMatch.home_score && pred.predicted_away_score === realMatch.away_score) {
-          matchPoints += 5;
-        } else {
-          const actualWinner = realMatch.home_score > realMatch.away_score ? 'HOME' : realMatch.home_score < realMatch.away_score ? 'AWAY' : 'DRAW';
-          const predWinner = pred.predicted_home_score > pred.predicted_away_score ? 'HOME' : pred.predicted_home_score < pred.predicted_away_score ? 'AWAY' : 'DRAW';
-          if (actualWinner === predWinner) {
-            matchPoints += 3;
-          }
+      const stage = matchConfig.stage;
+      const isKnockout = stage !== 'GROUP';
+
+      // REGLAS ELIMINATORIAS
+      if (isKnockout) {
+        // Obtenemos todos los equipos reales que llegaron a esta ronda
+        const stageMatches = matches.filter(m => m.stage === stage);
+        const teamsInStage = new Set<string>();
+        stageMatches.forEach(sm => {
+          if (sm.home_team_id) teamsInStage.add(sm.home_team_id);
+          if (sm.away_team_id) teamsInStage.add(sm.away_team_id);
+        });
+
+        // Acertar que un equipo llega a una ronda: 2 puntos por equipo
+        if (pred.predicted_home_team_id && teamsInStage.has(pred.predicted_home_team_id)) {
+          matchPoints += 2;
+        }
+        if (pred.predicted_away_team_id && teamsInStage.has(pred.predicted_away_team_id)) {
+          matchPoints += 2;
         }
 
-        // Regla 2: Cruce exacto en rondas eliminatorias (5 pts)
-        if (realMatch.stage !== 'GROUP' && realMatch.home_team_id && realMatch.away_team_id) {
+        // Acertar el enfrentamiento completo: 5 puntos
+        if (
+          matchConfig.home_team_id && matchConfig.away_team_id &&
+          pred.predicted_home_team_id && pred.predicted_away_team_id
+        ) {
           if (
-            (pred.predicted_home_team_id === realMatch.home_team_id && pred.predicted_away_team_id === realMatch.away_team_id) ||
-            (pred.predicted_home_team_id === realMatch.away_team_id && pred.predicted_away_team_id === realMatch.home_team_id)
+            (pred.predicted_home_team_id === matchConfig.home_team_id && pred.predicted_away_team_id === matchConfig.away_team_id) ||
+            (pred.predicted_home_team_id === matchConfig.away_team_id && pred.predicted_away_team_id === matchConfig.home_team_id)
           ) {
             matchPoints += 5;
           }
         }
       }
 
-      // Regla 3: Equipo llega a una ronda determinada (2 pts)
-      // Se evalúa verificando si el equipo predicho aparece en ALGUN partido real de la misma ronda
-      if (pred.predicted_home_team_id || pred.predicted_away_team_id) {
-        const stageMatches = finishedMatches.filter(m => m.stage === realMatch?.stage || matches.find(rm => rm.id === pred.match_id)?.stage);
-        const teamsInStage = new Set<string>();
-        stageMatches.forEach(sm => {
-           if (sm.home_team_id) teamsInStage.add(sm.home_team_id);
-           if (sm.away_team_id) teamsInStage.add(sm.away_team_id);
-        });
+      // REGLAS DE PARTIDO (Score exacto o ganador)
+      if (matchConfig.is_finished && matchConfig.home_score !== null && matchConfig.away_score !== null) {
+        // En eliminatorias, el usuario debe haber acertado los equipos para recibir puntos por el marcador
+        let canEarnScorePoints = true;
+        let realHomeScore = matchConfig.home_score;
+        let realAwayScore = matchConfig.away_score;
 
-        if (pred.predicted_home_team_id && teamsInStage.has(pred.predicted_home_team_id)) matchPoints += 2;
-        if (pred.predicted_away_team_id && teamsInStage.has(pred.predicted_away_team_id)) matchPoints += 2;
-        
-        // Ajuste: Para no dar doble puntaje por el mismo equipo en la misma ronda si el usuario lo predice varias veces por error,
-        // esto es por cada slot que atinó.
+        if (isKnockout) {
+          canEarnScorePoints = false;
+          if (
+            pred.predicted_home_team_id === matchConfig.home_team_id && 
+            pred.predicted_away_team_id === matchConfig.away_team_id
+          ) {
+            canEarnScorePoints = true;
+          } else if (
+            pred.predicted_home_team_id === matchConfig.away_team_id && 
+            pred.predicted_away_team_id === matchConfig.home_team_id
+          ) {
+            canEarnScorePoints = true;
+            realHomeScore = matchConfig.away_score;
+            realAwayScore = matchConfig.home_score;
+          }
+        }
+
+        if (canEarnScorePoints) {
+          // Resultado exacto: 5 puntos
+          if (pred.predicted_home_score === realHomeScore && pred.predicted_away_score === realAwayScore) {
+            matchPoints += 5;
+          } else {
+            // Ganador o empate correcto: 3 puntos
+            const actualWinner = realHomeScore > realAwayScore ? 'HOME' : realHomeScore < realAwayScore ? 'AWAY' : 'DRAW';
+            const predWinner = pred.predicted_home_score > pred.predicted_away_score ? 'HOME' : pred.predicted_home_score < pred.predicted_away_score ? 'AWAY' : 'DRAW';
+            if (actualWinner === predWinner) {
+              matchPoints += 3;
+            }
+          }
+        }
       }
 
       totalPoints += matchPoints;
       predictionUpdates.push({ id: pred.id, points_earned: matchPoints });
     }
 
-    // Regla 4: Premios Globales
+    // REGLAS PREMIOS ESPECIALES
     const uAward = allAwards?.find(a => a.user_id === userId);
     if (officialAwards && uAward) {
       if (officialAwards.top_scorer && officialAwards.top_scorer === uAward.top_scorer) totalPoints += 10;
       if (officialAwards.top_assist && officialAwards.top_assist === uAward.top_assist) totalPoints += 10;
       if (officialAwards.mvp && officialAwards.mvp === uAward.mvp) totalPoints += 10;
       
-      // Podio
       // Campeón (+20) -> Validar la predicción FINAL
       const finalPred = userPreds.find(p => {
         const rm = matches.find(m => m.id === p.match_id);
@@ -221,7 +255,7 @@ export const recalculateAllLeaderboards = async () => {
 
     userPointsMap[userId] = totalPoints;
     if (uAward) {
-      awardsUpdates.push({ user_id: userId, total_points: totalPoints });
+      awardsUpdates.push({ ...uAward, total_points: totalPoints });
     } else {
       awardsUpdates.push({ user_id: userId, total_points: totalPoints });
     }
