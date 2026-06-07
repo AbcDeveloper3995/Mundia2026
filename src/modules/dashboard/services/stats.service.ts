@@ -79,8 +79,25 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     return match?.is_finished;
   });
 
-  const correctWinners = myFinishedMatches.filter(p => p.points_earned >= 3).length;
-  const exactMatches = myFinishedMatches.filter(p => p.points_earned >= 5).length;
+  let correctWinners = 0;
+  let exactMatches = 0;
+
+  myFinishedMatches.forEach(p => {
+    const match = matches.find(m => m.id === p.match_id);
+    if (match && match.home_score !== null && match.away_score !== null) {
+      const homeDiff = Math.abs(p.predicted_home_score - match.home_score);
+      const awayDiff = Math.abs(p.predicted_away_score - match.away_score);
+      if (homeDiff === 0 && awayDiff === 0) {
+        exactMatches++;
+        correctWinners++;
+      } else {
+        const actualWinner = match.home_score > match.away_score ? 'HOME' : match.home_score < match.away_score ? 'AWAY' : 'DRAW';
+        const predWinner = p.predicted_home_score > p.predicted_away_score ? 'HOME' : p.predicted_home_score < p.predicted_away_score ? 'AWAY' : 'DRAW';
+        if (actualWinner === predWinner) correctWinners++;
+      }
+    }
+  });
+
   const precision = myFinishedMatches.length > 0 ? Math.round((correctWinners / myFinishedMatches.length) * 100) : 0;
 
   // --- FUN STATS (Premios) ---
@@ -97,15 +114,24 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     if (!match || !match.is_finished || !userStats[p.user_id]) return;
 
     userStats[p.user_id].total++;
-    if (p.points_earned >= 5) userStats[p.user_id].exact++;
-    if (p.points_earned >= 3) userStats[p.user_id].correct++;
-
-    // Casi Casi (diferencia de 1 gol exacto)
-    if (p.points_earned < 5 && match.home_score !== null && match.away_score !== null) {
+    
+    if (match.home_score !== null && match.away_score !== null) {
       const homeDiff = Math.abs(p.predicted_home_score - match.home_score);
       const awayDiff = Math.abs(p.predicted_away_score - match.away_score);
-      if ((homeDiff === 1 && awayDiff === 0) || (homeDiff === 0 && awayDiff === 1)) {
-        userStats[p.user_id].casiCasi++;
+      const isExact = homeDiff === 0 && awayDiff === 0;
+      
+      const actualWinner = match.home_score > match.away_score ? 'HOME' : match.home_score < match.away_score ? 'AWAY' : 'DRAW';
+      const predWinner = p.predicted_home_score > p.predicted_away_score ? 'HOME' : p.predicted_home_score < p.predicted_away_score ? 'AWAY' : 'DRAW';
+      const isCorrect = actualWinner === predWinner;
+
+      if (isExact) userStats[p.user_id].exact++;
+      if (isCorrect) userStats[p.user_id].correct++;
+
+      // Casi Casi (diferencia de 1 gol exacto)
+      if (!isExact) {
+        if ((homeDiff === 1 && awayDiff === 0) || (homeDiff === 0 && awayDiff === 1)) {
+          userStats[p.user_id].casiCasi++;
+        }
       }
     }
 
@@ -140,18 +166,19 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   const nostradamus = nostradamusRaw && nostradamusRaw.score > 0 ? { username: nostradamusRaw.username, count: nostradamusRaw.score } : null;
 
   const suertudoRaw = findWinner(uid => {
+    if (userStats[uid].exact > 0) return -1;
     const lEntry = leaderboard.find(l => l.userId === uid);
-    return lEntry ? lEntry.totalPoints - (userStats[uid].exact * 5) : 0;
+    return lEntry ? lEntry.totalPoints : -1;
   });
   const suertudo = suertudoRaw && suertudoRaw.score > 0 ? { username: suertudoRaw.username, points: suertudoRaw.score } : null;
 
-  const mufaRaw = findWinner(uid => (userStats[uid].correct / userStats[uid].total) * 100, 5, true); // Min 5 matches
-  const mufa = mufaRaw ? { username: mufaRaw.username, percentage: Math.round(mufaRaw.score) } : null;
+  const mufaRaw = findWinner(uid => (userStats[uid].correct / userStats[uid].total) * 100, 1, true); // Min 1 match
+  const mufa = mufaRaw && mufaRaw.score >= 0 ? { username: mufaRaw.username, percentage: Math.round(mufaRaw.score) } : null;
 
   const casiCasiRaw = findWinner(uid => userStats[uid].casiCasi);
   const casiCasi = casiCasiRaw && casiCasiRaw.score > 0 ? { username: casiCasiRaw.username, count: casiCasiRaw.score } : null;
 
-  const francotiradorRaw = findWinner(uid => (userStats[uid].exact / userStats[uid].total) * 100, 5); // Min 5 matches
+  const francotiradorRaw = findWinner(uid => (userStats[uid].exact / userStats[uid].total) * 100, 1); // Min 1 match
   const francotirador = francotiradorRaw && francotiradorRaw.score > 0 ? { username: francotiradorRaw.username, percentage: Math.round(francotiradorRaw.score) } : null;
 
   const reyEliminatoriasRaw = findWinner(uid => userStats[uid].eliminatoriasPoints);
@@ -178,8 +205,14 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     .sort((a, b) => new Date(b.match!.match_date!).getTime() - new Date(a.match!.match_date!).getTime());
 
   for (const p of sortedMyMatches) {
-    if (p.points_earned >= 3) {
-      rachaActual++;
+    if (p.match && p.match.home_score !== null && p.match.away_score !== null) {
+      const actualWinner = p.match.home_score > p.match.away_score ? 'HOME' : p.match.home_score < p.match.away_score ? 'AWAY' : 'DRAW';
+      const predWinner = p.predicted_home_score > p.predicted_away_score ? 'HOME' : p.predicted_home_score < p.predicted_away_score ? 'AWAY' : 'DRAW';
+      if (actualWinner === predWinner) {
+        rachaActual++;
+      } else {
+        break;
+      }
     } else {
       break;
     }

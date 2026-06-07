@@ -8,11 +8,14 @@ import { MainKPIs } from '../components/MainKPIs';
 import { FunStats } from '../components/FunStats';
 import { RivalryWidget } from '../components/RivalryWidget';
 import { GlobalWidgets } from '../components/GlobalWidgets';
+import { RulesModal } from '../components/RulesModal';
+import GavelIcon from '@mui/icons-material/Gavel';
 
 export const DashboardPage = () => {
   const { user, role } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [rulesOpen, setRulesOpen] = useState(false);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -32,12 +35,30 @@ export const DashboardPage = () => {
   return (
     <Box>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Typography variant="h2" component="h1" gutterBottom sx={{ color: 'text.primary' }}>
-          Bienvenido de vuelta,
-        </Typography>
-        <Typography variant="h5" color="text.secondary" sx={{ mb: 6, fontWeight: 400 }}>
-          {user?.user_metadata?.username} <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, ml: 1 }}>[{role || 'Participante'}]</Box>
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 6 }}>
+          <Box>
+            <Typography variant="h2" component="h1" gutterBottom sx={{ 
+              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 800
+            }}>
+              Hola de nuevo,
+            </Typography>
+            <Typography variant="h5" color="text.secondary" sx={{ fontWeight: 400 }}>
+              {user?.user_metadata?.username} <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, ml: 1 }}>[{role || 'Participante'}]</Box>
+            </Typography>
+          </Box>
+          <Button 
+            variant="outlined" 
+            color="primary" 
+            onClick={() => setRulesOpen(true)}
+            startIcon={<GavelIcon />}
+            sx={{ mt: { xs: 2, sm: 0 }, borderRadius: 2, fontWeight: 700 }}
+          >
+            Reglas de Puntuación
+          </Button>
+        </Box>
 
         <Grid container spacing={4} sx={{ mb: 6 }}>
           <Grid item xs={12} md={role === 'ADMIN' ? 6 : 12}>
@@ -106,6 +127,8 @@ export const DashboardPage = () => {
         ) : null}
 
       </motion.div>
+
+      <RulesModal open={rulesOpen} onClose={() => setRulesOpen(false)} />
     </Box>
   );
 };
