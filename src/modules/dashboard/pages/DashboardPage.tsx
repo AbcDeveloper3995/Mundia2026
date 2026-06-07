@@ -1,10 +1,33 @@
-import { Box, Typography, Paper, Grid, Button } from '@mui/material';
+import { Box, Typography, Paper, Grid, Button, CircularProgress } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { fetchDashboardStats, type DashboardStats } from '../services/stats.service';
+import { MainKPIs } from '../components/MainKPIs';
+import { FunStats } from '../components/FunStats';
+import { RivalryWidget } from '../components/RivalryWidget';
+import { GlobalWidgets } from '../components/GlobalWidgets';
 
 export const DashboardPage = () => {
   const { user, role } = useAuthStore();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!user) return;
+      try {
+        const data = await fetchDashboardStats(user.id);
+        setStats(data);
+      } catch (error) {
+        console.error('Error loading stats', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadStats();
+  }, [user]);
 
   return (
     <Box>
@@ -16,24 +39,21 @@ export const DashboardPage = () => {
           {user?.user_metadata?.username} <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, ml: 1 }}>[{role || 'Participante'}]</Box>
         </Typography>
 
-        <Grid container spacing={4}>
+        <Grid container spacing={4} sx={{ mb: 6 }}>
           <Grid item xs={12} md={role === 'ADMIN' ? 6 : 12}>
-            <Paper sx={{ p: 4, height: '100%', borderRadius: 3 }}>
+            <Paper sx={{ p: 4, height: '100%', borderRadius: 3, bgcolor: 'rgba(20,20,20,0.6)', backdropFilter: 'blur(10px)' }}>
               <Typography variant="h5" gutterBottom sx={{ color: 'secondary.main', fontWeight: 700 }}>
-                Modo Participante
+                Accesos Rápidos
               </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                Mantente al tanto de la tabla de posiciones, haz tus predicciones y compite en el ranking global.
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 3 }}>
                 <Button component={RouterLink} to="/dashboard/predictions" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
                   Mis Predicciones
                 </Button>
                 <Button component={RouterLink} to="/dashboard/leaderboard" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
-                  Ver Ranking Global
+                  Ranking Global
                 </Button>
                 <Button component={RouterLink} to="/dashboard/results" variant="outlined" color="secondary" sx={{ fontWeight: 800 }}>
-                  Ver Resultados Oficiales
+                  Resultados Oficiales
                 </Button>
               </Box>
             </Paper>
@@ -41,19 +61,16 @@ export const DashboardPage = () => {
           
           {role === 'ADMIN' && (
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 4, height: '100%', borderRadius: 3, border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+              <Paper sx={{ p: 4, height: '100%', borderRadius: 3, bgcolor: 'rgba(20,20,20,0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
                 <Typography variant="h5" gutterBottom sx={{ color: 'error.main', fontWeight: 700 }}>
                   Panel de Administración
                 </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                  Desde aquí podrás gestionar los partidos, resultados y las puntuaciones de todos los participantes.
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 3 }}>
                   <Button component={RouterLink} to="/dashboard/groups" variant="outlined" color="error">
-                    Gestionar Grupos
+                    Grupos
                   </Button>
                   <Button component={RouterLink} to="/dashboard/teams" variant="outlined" color="error">
-                    Gestionar Equipos
+                    Equipos
                   </Button>
                   <Button component={RouterLink} to="/dashboard/matches" variant="contained" color="error" sx={{ fontWeight: 800 }}>
                     Motor de Partidos
@@ -63,6 +80,31 @@ export const DashboardPage = () => {
             </Grid>
           )}
         </Grid>
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+            <CircularProgress color="primary" />
+          </Box>
+        ) : stats ? (
+          <Box sx={{ mt: 6 }}>
+            {/* 1. KPIs Principales */}
+            <MainKPIs stats={stats} />
+
+            {/* 2. Estadísticas Divertidas (Salón de la fama) */}
+            <FunStats stats={stats} />
+
+            {/* 3. Comparaciones y Widgets */}
+            <Grid container spacing={4}>
+              <Grid item xs={12} lg={4}>
+                <RivalryWidget stats={stats} myUsername={user?.user_metadata?.username || 'Tú'} />
+              </Grid>
+              <Grid item xs={12} lg={8}>
+                <GlobalWidgets stats={stats} />
+              </Grid>
+            </Grid>
+          </Box>
+        ) : null}
+
       </motion.div>
     </Box>
   );
