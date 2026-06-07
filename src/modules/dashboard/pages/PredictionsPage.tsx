@@ -244,9 +244,9 @@ export const PredictionsPage = () => {
     const { breakdown, total } = getPointsBreakdown(match, prediction);
 
     return (
-      <Grid item xs={12} md={6} key={match.id}>
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: isLocked ? 'rgba(255,255,255,0.1)' : 'primary.main', position: 'relative', overflow: 'hidden' }}>
+      <Grid item xs={12} md={6} key={match.id} sx={{ display: 'flex' }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ width: '100%', display: 'flex' }}>
+          <Paper sx={{ width: '100%', p: 3, borderRadius: 3, border: '1px solid', borderColor: isLocked ? 'rgba(255,255,255,0.1)' : 'primary.main', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             
             {realMatch && (
               <Box sx={{ position: 'absolute', top: 0, right: 0, bgcolor: isLocked ? 'rgba(46, 125, 50, 0.2)' : 'rgba(255, 160, 0, 0.2)', px: 2, py: 0.5, borderBottomLeftRadius: 8 }}>
@@ -261,38 +261,48 @@ export const PredictionsPage = () => {
             </Typography>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%' }}>
-                {home?.flag ? <img src={home.flag} alt="" style={{width: 40, height: 28, borderRadius: 4, marginBottom: 8}}/> : <Box sx={{width: 40, height: 28, bgcolor: '#333', mb: 1}}/>}
-                <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center' }}>{home?.name || 'TBD'}</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '35%' }}>
+                {home?.flag ? <img src={home.flag} alt="" style={{width: 48, height: 32, objectFit: 'cover', borderRadius: 4, marginBottom: 8}}/> : <Box sx={{width: 48, height: 32, bgcolor: '#333', mb: 1, borderRadius: 1}}/>}
+                <Box sx={{ height: 40, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', fontSize: '0.85rem', lineHeight: 1.2 }}>{home?.name || 'TBD'}</Typography>
+                </Box>
               </Box>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <TextField 
-                  size="small" 
-                  sx={{ width: 50 }} 
-                  inputProps={{ style: { textAlign: 'center', fontWeight: 900, fontSize: '1.2rem' } }}
-                  value={hScore ?? ''}
-                  onChange={(e) => handlePredictionChange(match.id, 'home', e.target.value)}
-                  disabled={isLocked || (!home && !away)}
-                />
-                <Typography variant="h6" color="text.secondary">-</Typography>
-                <TextField 
-                  size="small" 
-                  sx={{ width: 50 }} 
-                  inputProps={{ style: { textAlign: 'center', fontWeight: 900, fontSize: '1.2rem' } }}
-                  value={aScore ?? ''}
-                  onChange={(e) => handlePredictionChange(match.id, 'away', e.target.value)}
-                  disabled={isLocked || (!home && !away)}
-                />
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30%', gap: 1 }}>
+                <Box sx={{ width: 48, height: 56, bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid', borderColor: isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.2s', '&:focus-within': { borderColor: 'primary.main', bgcolor: 'rgba(255,255,255,0.08)' } }}>
+                  <input 
+                    type="text" 
+                    inputMode="numeric" 
+                    maxLength={2}
+                    value={hScore ?? ''}
+                    onChange={(e) => handlePredictionChange(match.id, 'home', e.target.value)}
+                    disabled={isLocked || (!home && !away)}
+                    style={{ width: '100%', height: '100%', background: 'transparent', border: 'none', color: 'white', textAlign: 'center', fontSize: '1.4rem', fontWeight: 900, outline: 'none' }}
+                  />
+                </Box>
+                <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 900 }}>-</Typography>
+                <Box sx={{ width: 48, height: 56, bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid', borderColor: isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.2s', '&:focus-within': { borderColor: 'primary.main', bgcolor: 'rgba(255,255,255,0.08)' } }}>
+                  <input 
+                    type="text" 
+                    inputMode="numeric" 
+                    maxLength={2}
+                    value={aScore ?? ''}
+                    onChange={(e) => handlePredictionChange(match.id, 'away', e.target.value)}
+                    disabled={isLocked || (!home && !away)}
+                    style={{ width: '100%', height: '100%', background: 'transparent', border: 'none', color: 'white', textAlign: 'center', fontSize: '1.4rem', fontWeight: 900, outline: 'none' }}
+                  />
+                </Box>
               </Box>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%' }}>
-                {away?.flag ? <img src={away.flag} alt="" style={{width: 40, height: 28, borderRadius: 4, marginBottom: 8}}/> : <Box sx={{width: 40, height: 28, bgcolor: '#333', mb: 1}}/>}
-                <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center' }}>{away?.name || 'TBD'}</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '35%' }}>
+                {away?.flag ? <img src={away.flag} alt="" style={{width: 48, height: 32, objectFit: 'cover', borderRadius: 4, marginBottom: 8}}/> : <Box sx={{width: 48, height: 32, bgcolor: '#333', mb: 1, borderRadius: 1}}/>}
+                <Box sx={{ height: 40, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'center', fontSize: '0.85rem', lineHeight: 1.2 }}>{away?.name || 'TBD'}</Typography>
+                </Box>
               </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', mt: 2, pt: 2, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', mt: 'auto', pt: 2, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 {isLocked || breakdown.length > 0 ? (
                   <Typography variant="body2" sx={{ color: total > 0 ? 'success.main' : 'error.main', fontWeight: 800 }}>
@@ -305,7 +315,14 @@ export const PredictionsPage = () => {
                 )}
 
                 {!isLocked && home && away && (
-                  <Button variant="contained" color="primary" size="small" onClick={() => handleSavePrediction(match.id, match.home_team_id, match.away_team_id)}>
+                  <Button 
+                    variant="contained" 
+                    color="primary" 
+                    size="small" 
+                    onClick={() => handleSavePrediction(match.id, match.home_team_id, match.away_team_id)}
+                    disabled={hScore === '' || hScore == null || aScore === '' || aScore == null}
+                    sx={{ fontWeight: 700, px: 3, borderRadius: 2 }}
+                  >
                     Guardar
                   </Button>
                 )}
@@ -348,9 +365,22 @@ export const PredictionsPage = () => {
       </Tabs>
 
       {tab === 0 && (
-        <Grid container spacing={3}>
-          {simulatedMatches.filter(m => m.stage === 'GROUP').map(m => renderMatchCard(m))}
-        </Grid>
+        <Box>
+          {groups.map(group => {
+            const groupMatches = simulatedMatches.filter(m => m.stage === 'GROUP' && m.group_id === group.id).sort((a,b) => a.id.localeCompare(b.id));
+            if (groupMatches.length === 0) return null;
+            return (
+              <Box key={group.id} sx={{ mb: 6 }}>
+                <Typography variant="h5" sx={{ mb: 3, fontWeight: 900, color: 'secondary.main', pl: 2, borderLeft: '4px solid', borderColor: 'secondary.main', display: 'flex', alignItems: 'center' }}>
+                  Grupo {group.name}
+                </Typography>
+                <Grid container spacing={3}>
+                  {groupMatches.map(m => renderMatchCard(m))}
+                </Grid>
+              </Box>
+            );
+          })}
+        </Box>
       )}
 
       {tab === 1 && (

@@ -22,8 +22,8 @@ export const AuthLayout = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'url("https://www.transparenttextures.com/patterns/cubes.png")',
-          opacity: 0.1,
+          background: 'url("/adadeecadfaf374caf3e482eb3139928.jpg") center / 100% 100% no-repeat',
+          opacity: 0.4,
           zIndex: 0,
         }}
       />

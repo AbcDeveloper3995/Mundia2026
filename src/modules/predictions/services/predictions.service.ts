@@ -287,12 +287,26 @@ export interface LeaderboardEntry {
 }
 
 export const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
-  const { data, error } = await supabase.from('prediction_awards').select('user_id, total_points');
-  if (error) throw error;
+  // Como no hay relación Foreign Key directa entre prediction_awards y profiles configurada en Supabase,
+  // hacemos las dos peticiones y las unimos en memoria.
+  const [awardsResponse, profilesResponse] = await Promise.all([
+    supabase.from('prediction_awards').select('user_id, total_points'),
+    supabase.from('profiles').select('id, username')
+  ]);
 
-  const entries: LeaderboardEntry[] = (data || []).map(row => ({
+  if (awardsResponse.error) throw awardsResponse.error;
+  
+  // Crear un diccionario (mapa) de id -> username para una búsqueda instantánea
+  const profilesMap: Record<string, string> = {};
+  if (profilesResponse.data) {
+    profilesResponse.data.forEach(p => {
+      profilesMap[p.id] = p.username;
+    });
+  }
+
+  const entries: LeaderboardEntry[] = (awardsResponse.data || []).map((row: any) => ({
     userId: row.user_id,
-    username: row.user_id.substring(0, 8), // Fallback
+    username: profilesMap[row.user_id] || row.user_id.substring(0, 8),
     totalPoints: row.total_points || 0
   }));
 

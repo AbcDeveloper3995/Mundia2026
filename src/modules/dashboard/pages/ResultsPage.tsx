@@ -66,35 +66,68 @@ export const ResultsPage = () => {
           const standings = calculateGroupStandings(group.teams || [], groupMatches as any);
 
           return (
-            <Grid item xs={12} md={6} xl={4} key={group.id}>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
-                <Paper sx={{ overflow: 'hidden', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)', bgcolor: 'rgba(0,0,0,0.3)' }}>
-                  <Box sx={{ bgcolor: 'primary.dark', p: 2, textAlign: 'center' }}>
-                    <Typography variant="h6" sx={{ fontWeight: 900, color: 'white' }}>GRUPO {group.name}</Typography>
+            <Grid item xs={12} sm={6} md={6} lg={4} xl={3} key={group.id} sx={{ display: 'flex' }}>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} style={{ width: '100%', display: 'flex' }}>
+                <Paper 
+                  sx={{ 
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden', 
+                    borderRadius: 4, 
+                    border: '1px solid rgba(255,255,255,0.08)', 
+                    bgcolor: 'rgba(20, 20, 20, 0.6)',
+                    backdropFilter: 'blur(20px)',
+                    boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.4)'
+                  }}
+                >
+                  <Box sx={{ bgcolor: 'rgba(0,0,0,0.6)', py: 2, textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 900, color: 'primary.main', letterSpacing: 2, fontSize: '1.1rem' }}>GRUPO {group.name}</Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', bgcolor: 'rgba(255,255,255,0.05)', p: 1.5, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <Typography sx={{ width: '40%', fontWeight: 800, fontSize: '0.8rem' }}>EQUIPO</Typography>
-                    <Typography sx={{ width: '12%', textAlign: 'center', fontWeight: 800, fontSize: '0.8rem' }}>PJ</Typography>
-                    <Typography sx={{ width: '12%', textAlign: 'center', fontWeight: 800, fontSize: '0.8rem' }}>GF</Typography>
-                    <Typography sx={{ width: '12%', textAlign: 'center', fontWeight: 800, fontSize: '0.8rem' }}>GC</Typography>
-                    <Typography sx={{ width: '12%', textAlign: 'center', fontWeight: 800, fontSize: '0.8rem' }}>DG</Typography>
-                    <Typography sx={{ width: '12%', textAlign: 'center', fontWeight: 900, fontSize: '0.8rem', color: 'primary.main' }}>PTS</Typography>
+
+                  <Box sx={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '8fr 2fr 2fr 2fr 2fr 2fr', 
+                    bgcolor: 'rgba(255,255,255,0.03)', 
+                    p: 1.5, 
+                    borderBottom: '1px solid rgba(255,255,255,0.1)' 
+                  }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: '0.7rem', color: 'text.secondary' }}>EQUIPO</Typography>
+                    <Typography sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.7rem', color: 'text.secondary' }}>PJ</Typography>
+                    <Typography sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.7rem', color: 'text.secondary' }}>GF</Typography>
+                    <Typography sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.7rem', color: 'text.secondary' }}>GC</Typography>
+                    <Typography sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.7rem', color: 'text.secondary' }}>DG</Typography>
+                    <Typography sx={{ textAlign: 'center', fontWeight: 900, fontSize: '0.7rem', color: 'primary.main' }}>PTS</Typography>
                   </Box>
                   
-                  {standings.map((team, tIdx) => (
-                    <Box key={team.team_id} sx={{ display: 'flex', p: 1.5, borderBottom: '1px solid rgba(255,255,255,0.02)', bgcolor: tIdx < 2 ? 'rgba(46, 125, 50, 0.1)' : 'transparent', alignItems: 'center' }}>
-                      <Box sx={{ width: '40%', display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', width: 12 }}>{tIdx + 1}</Typography>
-                        {team.flag && <img src={team.flag} alt="" style={{ width: 20, height: 14, borderRadius: 2 }} />}
-                        <Typography variant="body2" sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{team.name}</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                    {standings.map((team, tIdx) => (
+                      <Box key={team.team_id} sx={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: '8fr 2fr 2fr 2fr 2fr 2fr', 
+                        p: 1.5, 
+                        borderBottom: '1px solid rgba(255,255,255,0.03)', 
+                        bgcolor: tIdx < 2 ? 'rgba(0, 230, 118, 0.08)' : 'transparent', 
+                        alignItems: 'center', 
+                        flexGrow: 1, 
+                        transition: 'all 0.2s', 
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } 
+                      }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 800, color: tIdx < 2 ? 'primary.main' : 'text.secondary', width: 14 }}>{tIdx + 1}</Typography>
+                          {team.flag && <img src={team.flag} alt="" style={{ width: 24, height: 16, borderRadius: 2, objectFit: 'cover' }} />}
+                          <Typography variant="body2" sx={{ fontWeight: tIdx < 2 ? 800 : 600, color: tIdx < 2 ? 'text.primary' : 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.85rem' }}>
+                            {team.name}
+                          </Typography>
+                        </Box>
+                        <Typography sx={{ textAlign: 'center', fontWeight: 600, fontSize: '0.85rem', color: 'text.secondary' }}>{team.played}</Typography>
+                        <Typography sx={{ textAlign: 'center', fontWeight: 600, fontSize: '0.85rem', color: 'text.secondary' }}>{team.goalsFor}</Typography>
+                        <Typography sx={{ textAlign: 'center', fontWeight: 600, fontSize: '0.85rem', color: 'text.secondary' }}>{team.goalsAgainst}</Typography>
+                        <Typography sx={{ textAlign: 'center', fontWeight: 600, fontSize: '0.85rem', color: 'text.secondary' }}>{team.goalDifference > 0 ? `+${team.goalDifference}` : team.goalDifference}</Typography>
+                        <Typography sx={{ textAlign: 'center', fontWeight: 900, fontSize: '0.95rem', color: 'primary.main' }}>{team.points}</Typography>
                       </Box>
-                      <Typography sx={{ width: '12%', textAlign: 'center', fontWeight: 600, fontSize: '0.9rem' }}>{team.played}</Typography>
-                      <Typography sx={{ width: '12%', textAlign: 'center', fontWeight: 600, fontSize: '0.9rem' }}>{team.goalsFor}</Typography>
-                      <Typography sx={{ width: '12%', textAlign: 'center', fontWeight: 600, fontSize: '0.9rem' }}>{team.goalsAgainst}</Typography>
-                      <Typography sx={{ width: '12%', textAlign: 'center', fontWeight: 600, fontSize: '0.9rem' }}>{team.goalDifference > 0 ? `+${team.goalDifference}` : team.goalDifference}</Typography>
-                      <Typography sx={{ width: '12%', textAlign: 'center', fontWeight: 900, fontSize: '1rem', color: 'primary.main' }}>{team.points}</Typography>
-                    </Box>
-                  ))}
+                    ))}
+                  </Box>
                 </Paper>
               </motion.div>
             </Grid>
