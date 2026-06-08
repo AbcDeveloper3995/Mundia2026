@@ -8,7 +8,6 @@ const trophyConfig = {
   mufa: { title: '💀 El Merma', desc: 'Peor porcentaje de aciertos', color: '#f44336' },
   casiCasi: { title: '😭 Casi Casi', desc: 'A un gol de acertar exacto', color: '#ffeb3b' },
   francotirador: { title: '🎯 Durakito', desc: 'Mejor porcentaje de exactos', color: '#00e676' },
-  rachaActual: { title: '🔥 Racha Actual', desc: 'Aciertos seguidos', color: '#ff5722' },
   reyEliminatorias: { title: '👑 Anda Pro', desc: 'Más puntos en cruces', color: '#ffd700' },
   visionario: { title: '🧠 Visionario', desc: 'Acertó MVP/Campeón', color: '#2196f3' },
 };
@@ -24,7 +23,6 @@ export const FunStats = ({ stats }: FunStatsProps) => {
     { key: 'mufa', data: stats.mufa, value: stats.mufa ? `${stats.mufa.percentage}% efectividad` : 'Nadie aún' },
     { key: 'casiCasi', data: stats.casiCasi, value: stats.casiCasi ? `${stats.casiCasi.count} veces` : 'Nadie aún' },
     { key: 'francotirador', data: stats.francotirador, value: stats.francotirador ? `${stats.francotirador.percentage}% exactos` : 'Nadie aún' },
-    { key: 'rachaActual', data: stats.rachaActual > 0 ? { username: 'Tú' } : null, value: `${stats.rachaActual} seguidos` },
     { key: 'reyEliminatorias', data: stats.reyEliminatorias, value: stats.reyEliminatorias ? `${stats.reyEliminatorias.points} pts` : 'Nadie aún' },
     { key: 'visionario', data: stats.visionario, value: stats.visionario ? `${stats.visionario.points} pts extra` : 'Nadie aún' },
   ];

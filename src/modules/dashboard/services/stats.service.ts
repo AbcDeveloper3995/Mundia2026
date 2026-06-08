@@ -33,7 +33,6 @@ export interface DashboardStats {
   mufa: { username: string; percentage: number } | null;
   casiCasi: { username: string; count: number } | null;
   francotirador: { username: string; percentage: number } | null;
-  rachaActual: number;
   reyEliminatorias: { username: string; points: number } | null;
   visionario: { username: string; points: number } | null;
 
@@ -136,7 +135,18 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     }
 
     if (match.stage !== 'GROUP') {
-      userStats[p.user_id].eliminatoriasPoints += (p.points_earned || 0);
+      // Proxy simple para puntos en eliminatorias en caso de que points_earned no esté actualizado
+      if (match.home_score !== null && match.away_score !== null) {
+        const actualWinner = match.home_score > match.away_score ? 'HOME' : match.home_score < match.away_score ? 'AWAY' : 'DRAW';
+        const predWinner = p.predicted_home_score > p.predicted_away_score ? 'HOME' : p.predicted_home_score < p.predicted_away_score ? 'AWAY' : 'DRAW';
+        if (actualWinner === predWinner) {
+           userStats[p.user_id].eliminatoriasPoints += 3;
+        }
+        if (match.home_score === p.predicted_home_score && match.away_score === p.predicted_away_score) {
+           userStats[p.user_id].eliminatoriasPoints += 2; // Extra 2 pts for exact
+        }
+      }
+      // userStats[p.user_id].eliminatoriasPoints += (p.points_earned || 0);
     }
   });
 
@@ -166,9 +176,11 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   const nostradamus = nostradamusRaw && nostradamusRaw.score > 0 ? { username: nostradamusRaw.username, count: nostradamusRaw.score } : null;
 
   const suertudoRaw = findWinner(uid => {
-    if (userStats[uid].exact > 0) return -1;
     const lEntry = leaderboard.find(l => l.userId === uid);
-    return lEntry ? lEntry.totalPoints : -1;
+    const pts = lEntry ? lEntry.totalPoints : 0;
+    // Base 1000. Restar 100 por cada acierto exacto. Sumar puntos totales.
+    // Quien tenga menos aciertos exactos pero más puntos ganará.
+    return (1000 - userStats[uid].exact * 100) + pts;
   });
   const suertudo = suertudoRaw && suertudoRaw.score > 0 ? { username: suertudoRaw.username, points: suertudoRaw.score } : null;
 
@@ -196,27 +208,6 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     }
   });
   const visionario = bestVisionario.points > 0 ? bestVisionario : null;
-
-  // Racha Actual
-  let rachaActual = 0;
-  const sortedMyMatches = myFinishedMatches
-    .map(p => ({ ...p, match: matches.find(m => m.id === p.match_id) }))
-    .filter(m => m.match && m.match.match_date)
-    .sort((a, b) => new Date(b.match!.match_date!).getTime() - new Date(a.match!.match_date!).getTime());
-
-  for (const p of sortedMyMatches) {
-    if (p.match && p.match.home_score !== null && p.match.away_score !== null) {
-      const actualWinner = p.match.home_score > p.match.away_score ? 'HOME' : p.match.home_score < p.match.away_score ? 'AWAY' : 'DRAW';
-      const predWinner = p.predicted_home_score > p.predicted_away_score ? 'HOME' : p.predicted_home_score < p.predicted_away_score ? 'AWAY' : 'DRAW';
-      if (actualWinner === predWinner) {
-        rachaActual++;
-      } else {
-        break;
-      }
-    } else {
-      break;
-    }
-  }
 
   // --- RIVALRY ---
   let rival = null;
@@ -398,7 +389,6 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     mufa,
     casiCasi,
     francotirador,
-    rachaActual,
     reyEliminatorias,
     visionario,
     rival,
