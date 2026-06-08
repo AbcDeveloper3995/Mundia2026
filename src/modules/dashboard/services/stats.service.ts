@@ -336,10 +336,27 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   const mvpCounts: Record<string, number> = {};
   const scorerCounts: Record<string, number> = {};
 
+  const finalMatch = matches.find(m => m.stage === 'FINAL');
+  if (finalMatch) {
+    predictions.filter(p => p.match_id === finalMatch.id).forEach(p => {
+      let winnerTeamId = null;
+      if (p.predicted_home_score > p.predicted_away_score) {
+        winnerTeamId = p.predicted_home_team_id;
+      } else if (p.predicted_home_score < p.predicted_away_score) {
+        winnerTeamId = p.predicted_away_team_id;
+      } else if (p.predicted_penalty_winner === 'HOME') {
+        winnerTeamId = p.predicted_home_team_id;
+      } else if (p.predicted_penalty_winner === 'AWAY') {
+        winnerTeamId = p.predicted_away_team_id;
+      }
+
+      if (winnerTeamId) {
+        championCounts[winnerTeamId] = (championCounts[winnerTeamId] || 0) + 1;
+      }
+    });
+  }
+
   awards.forEach(a => {
-    if (a.champion_team_id) {
-      championCounts[a.champion_team_id] = (championCounts[a.champion_team_id] || 0) + 1;
-    }
     if (a.mvp) {
       mvpCounts[a.mvp] = (mvpCounts[a.mvp] || 0) + 1;
     }
