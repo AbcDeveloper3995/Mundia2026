@@ -66,7 +66,7 @@ export const ResultsPage = () => {
           const standings = calculateGroupStandings(group.teams || [], groupMatches as any);
 
           return (
-            <Grid item xs={12} sm={6} md={6} lg={4} xl={3} key={group.id} sx={{ display: 'flex' }}>
+            <Grid size={{ xs: 12, sm: 6, md: 6, lg: 4, xl: 3 }}      key={group.id} sx={{ display: 'flex' }}>
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} style={{ width: '100%', display: 'flex' }}>
                 <Paper 
                   sx={{ 

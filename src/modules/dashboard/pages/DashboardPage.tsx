@@ -61,7 +61,7 @@ export const DashboardPage = () => {
         </Box>
 
         <Grid container spacing={4} sx={{ mb: 6 }}>
-          <Grid item xs={12} md={role === 'ADMIN' ? 6 : 12}>
+          <Grid size={{ xs: 12, md: role === 'ADMIN' ? 6 : 12 }}  >
             <Paper sx={{ p: 4, height: '100%', borderRadius: 3, bgcolor: 'rgba(20,20,20,0.6)', backdropFilter: 'blur(10px)' }}>
               <Typography variant="h5" gutterBottom sx={{ color: 'secondary.main', fontWeight: 700 }}>
                 Accesos Rápidos
@@ -81,7 +81,7 @@ export const DashboardPage = () => {
           </Grid>
           
           {role === 'ADMIN' && (
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}  >
               <Paper sx={{ p: 4, height: '100%', borderRadius: 3, bgcolor: 'rgba(20,20,20,0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
                 <Typography variant="h5" gutterBottom sx={{ color: 'error.main', fontWeight: 700 }}>
                   Panel de Administración
@@ -116,10 +116,10 @@ export const DashboardPage = () => {
 
             {/* 3. Comparaciones y Widgets */}
             <Grid container spacing={4}>
-              <Grid item xs={12} lg={4}>
+              <Grid size={{ xs: 12, lg: 4 }}  >
                 <RivalryWidget stats={stats} myUsername={user?.user_metadata?.username || 'Tú'} />
               </Grid>
-              <Grid item xs={12} lg={8}>
+              <Grid size={{ xs: 12, lg: 8 }}  >
                 <GlobalWidgets stats={stats} />
               </Grid>
             </Grid>

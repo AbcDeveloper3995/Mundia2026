@@ -32,10 +32,10 @@ export const RivalryWidget = ({ stats, myUsername }: RivalryWidgetProps) => {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="subtitle1" fontWeight={800} color={ahead ? "text.primary" : "primary.main"}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }} color={ahead ? "text.primary" : "primary.main"}>
               Tú
             </Typography>
-            <Typography variant="subtitle1" fontWeight={800} color="text.secondary">
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }} color="text.secondary">
               {myPoints} pts
             </Typography>
           </Box>
@@ -48,10 +48,10 @@ export const RivalryWidget = ({ stats, myUsername }: RivalryWidgetProps) => {
 
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="subtitle1" fontWeight={800} color={ahead ? "primary.main" : "text.primary"}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }} color={ahead ? "primary.main" : "text.primary"}>
               {username}
             </Typography>
-            <Typography variant="subtitle1" fontWeight={800} color="text.secondary">
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }} color="text.secondary">
               {points} pts
             </Typography>
           </Box>
@@ -65,7 +65,7 @@ export const RivalryWidget = ({ stats, myUsername }: RivalryWidgetProps) => {
         <Box sx={{ mt: 2, p: 2, bgcolor: ahead ? 'rgba(244, 67, 54, 0.1)' : 'rgba(0, 230, 118, 0.1)', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
           <TrendingUpIcon sx={{ color: ahead ? '#f44336' : '#00e676', transform: ahead ? 'scaleY(-1)' : 'none' }} />
           <Box>
-            <Typography variant="body2" fontWeight={800} color={ahead ? "#f44336" : "#00e676"}>
+            <Typography variant="body2" sx={{ fontWeight: 800 }} color={ahead ? "#f44336" : "#00e676"}>
               {ahead ? "A quién persigues" : "Quién te persigue"}
             </Typography>
             <Typography variant="body2" color="text.secondary">

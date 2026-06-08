@@ -49,7 +49,7 @@ export const GroupsManager = () => {
 
       <Grid container spacing={3}>
         {groups.map((group, idx) => (
-          <Grid item xs={12} sm={6} md={4} key={group.id}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}    key={group.id}>
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
               <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
                 <Typography variant="h5" sx={{ color: 'secondary.main', mb: 2 }}>

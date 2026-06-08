@@ -17,6 +17,9 @@ export interface PredictionAwards {
   top_scorer: string | null;
   top_assist: string | null;
   mvp: string | null;
+  champion_team_id?: string | null;
+  runner_up_team_id?: string | null;
+  third_place_team_id?: string | null;
   total_points?: number;
 }
 

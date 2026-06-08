@@ -142,7 +142,7 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
 
   // Calculate winners for each category
   const findWinner = (scorer: (uid: string) => number, minTotalMatches: number = 0, reverse: boolean = false) => {
-    let bestUid = null;
+    let bestUid: string | null = null;
     let bestScore = reverse ? Infinity : -Infinity;
 
     Object.keys(userStats).forEach(uid => {
@@ -294,7 +294,7 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   // Si easiest y hardest resultan ser el mismo (porque todos los partidos tienen los mismos aciertos),
   // podríamos anular uno, pero por ahora los dejamos para ser consistentes con los datos.
   // Sin embargo, si maxHits === minHits y hay más de 1 partido, podemos asignar el hardest al siguiente.
-  if (hardestMatch && easiestMatch && hardestMatch.matchName === easiestMatch.matchName) {
+  if (hardestMatch && easiestMatch && (hardestMatch as MatchStatsInfo).matchName === (easiestMatch as MatchStatsInfo).matchName) {
     const otherMatches = finishedMatchesObj.filter(m => {
       const hTeam = teams.find(t => t.id === m.home_team_id);
       const aTeam = teams.find(t => t.id === m.away_team_id);

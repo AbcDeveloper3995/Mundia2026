@@ -38,7 +38,7 @@ export const FunStats = ({ stats }: FunStatsProps) => {
         {cards.map((card, idx) => {
           const config = trophyConfig[card.key as keyof typeof trophyConfig];
           return (
-            <Grid item xs={12} sm={6} md={3} key={card.key}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}    key={card.key}>
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
                 <Paper sx={{ 
                   p: 2, 
@@ -50,7 +50,7 @@ export const FunStats = ({ stats }: FunStatsProps) => {
                   flexDirection: 'column',
                   gap: 1
                 }}>
-                  <Typography variant="subtitle1" fontWeight={800} color={config.color}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }} color={config.color}>
                     {config.title}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -58,10 +58,10 @@ export const FunStats = ({ stats }: FunStatsProps) => {
                   </Typography>
                   
                   <Box sx={{ mt: 1, p: 1.5, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
-                    <Typography variant="body1" fontWeight={700} color="text.primary">
+                    <Typography variant="body1" sx={{ fontWeight: 700 }} color="text.primary">
                       {card.data ? card.data.username : '---'}
                     </Typography>
-                    <Typography variant="body2" color="primary.main" fontWeight={800}>
+                    <Typography variant="body2" color="primary.main" sx={{ fontWeight: 800 }}>
                       {card.value}
                     </Typography>
                   </Box>

@@ -245,7 +245,7 @@ export const MatchesManager = () => {
       {tab === 0 && (
         <Grid container spacing={4}>
           {/* Tabla de Posiciones */}
-          <Grid item xs={12} lg={8}>
+          <Grid size={{ xs: 12, lg: 8 }}  >
              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
               <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>Tabla de Posiciones</Typography>
               <FormControl variant="outlined" size="small" sx={{ minWidth: 150 }}>
@@ -285,7 +285,7 @@ export const MatchesManager = () => {
           </Grid>
 
           {/* Lista de Partidos Grupo */}
-          <Grid item xs={12} lg={4}>
+          <Grid size={{ xs: 12, lg: 4 }}  >
             <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: 'text.primary' }}>Resultados</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {matches.map((match, idx) => {
@@ -303,12 +303,12 @@ export const MatchesManager = () => {
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <TextField
-                            size="small" sx={{ width: 45 }} inputProps={{ style: { textAlign: 'center', fontWeight: 800 } }}
+                            size="small" sx={{ width: 45 }} slotProps={{ htmlInput: { style: { textAlign: 'center', fontWeight: 800 } } }}
                             value={match.home_score ?? ''} onChange={(e) => handleGroupScoreChange(match.id, 'home_score', e.target.value)}
                           />
                           <Typography variant="body1" sx={{ color: 'text.secondary' }}>-</Typography>
                           <TextField
-                            size="small" sx={{ width: 45 }} inputProps={{ style: { textAlign: 'center', fontWeight: 800 } }}
+                            size="small" sx={{ width: 45 }} slotProps={{ htmlInput: { style: { textAlign: 'center', fontWeight: 800 } } }}
                             value={match.away_score ?? ''} onChange={(e) => handleGroupScoreChange(match.id, 'away_score', e.target.value)}
                           />
                         </Box>
@@ -366,7 +366,7 @@ export const MatchesManager = () => {
               };
 
               return (
-                <Grid item xs={12} md={6} key={stage}>
+                <Grid size={{ xs: 12, md: 6 }}   key={stage}>
                   <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(0,0,0,0.2)' }}>
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>{stageNames[stage]}</Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -392,8 +392,8 @@ export const MatchesManager = () => {
                                 {(match.home_score !== null && match.home_score === match.away_score) && (
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, opacity: 0.8 }}>
                                     <Typography variant="caption" color="secondary">Penales:</Typography>
-                                    <TextField size="small" sx={{ width: 35 }} inputProps={{style:{fontSize:12, padding:4}}} value={match.home_penalties ?? ''} onChange={(e) => handleKnockoutScoreChange(match.id, 'home_penalties', e.target.value)} />
-                                    <TextField size="small" sx={{ width: 35 }} inputProps={{style:{fontSize:12, padding:4}}} value={match.away_penalties ?? ''} onChange={(e) => handleKnockoutScoreChange(match.id, 'away_penalties', e.target.value)} />
+                                    <TextField size="small" sx={{ width: 35 }} slotProps={{ htmlInput: {style:{fontSize:12, padding:4}} }} value={match.home_penalties ?? ''} onChange={(e) => handleKnockoutScoreChange(match.id, 'home_penalties', e.target.value)} />
+                                    <TextField size="small" sx={{ width: 35 }} slotProps={{ htmlInput: {style:{fontSize:12, padding:4}} }} value={match.away_penalties ?? ''} onChange={(e) => handleKnockoutScoreChange(match.id, 'away_penalties', e.target.value)} />
                                   </Box>
                                 )}
                                 <Switch size="small" checked={match.is_finished} onChange={(e) => handleStatusToggle(match.id, e.target.checked, true)} color="secondary" />
@@ -425,7 +425,7 @@ export const MatchesManager = () => {
             </Typography>
 
             <Grid container spacing={4}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}  >
                 <Typography variant="h6" sx={{ mb: 2, color: 'secondary.main' }}>Premios Individuales</Typography>
                 <FormControl fullWidth sx={{ mb: 3 }}>
                   <InputLabel>Máximo Goleador</InputLabel>
@@ -449,7 +449,7 @@ export const MatchesManager = () => {
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}  >
                 <Typography variant="h6" sx={{ mb: 2, color: 'secondary.main' }}>Podio del Torneo</Typography>
                 <FormControl fullWidth sx={{ mb: 3 }}>
                   <InputLabel>Campeón (20 pts)</InputLabel>

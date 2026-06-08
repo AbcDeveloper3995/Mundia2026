@@ -260,7 +260,7 @@ export const PredictionsPage = () => {
     const { breakdown, total } = getPointsBreakdown(match, prediction);
 
     return (
-      <Grid item xs={12} md={6} key={match.id} sx={{ display: 'flex' }}>
+      <Grid size={{ xs: 12, md: 6 }}   key={match.id} sx={{ display: 'flex' }}>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ width: '100%', display: 'flex' }}>
           <Paper sx={{ width: '100%', p: 3, borderRadius: 3, border: '1px solid', borderColor: isLocked ? 'rgba(255,255,255,0.1)' : 'primary.main', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             

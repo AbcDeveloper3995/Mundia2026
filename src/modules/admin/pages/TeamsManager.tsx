@@ -58,7 +58,7 @@ export const TeamsManager = () => {
         )}
         
         {teams.map((team, idx) => (
-          <Grid item xs={12} sm={6} md={3} key={team.id}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}    key={team.id}>
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: (idx % 10) * 0.05 }}>
               <Paper sx={{ p: 2, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
