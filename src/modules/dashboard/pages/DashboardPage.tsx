@@ -16,6 +16,15 @@ export const DashboardPage = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [messiIndex, setMessiIndex] = useState(0);
+  const messiImages = ['/messi1.jpg', '/messi2.jpg'];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessiIndex(prev => (prev + 1) % messiImages.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -101,8 +110,21 @@ export const DashboardPage = () => {
               flexDirection: { xs: 'column', md: 'row' },
               overflow: 'hidden'
             }}>
-              <Box sx={{ width: { xs: '100%', md: '30%' }, position: 'relative', minHeight: { xs: 250, md: 'auto' }, bgcolor: '#000' }}>
-                <img src="/messi.jpg" alt="Messi" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'contain' }} />
+              <Box sx={{ width: { xs: '100%', md: '30%' }, position: 'relative', minHeight: { xs: 250, md: 'auto' }, bgcolor: '#000', overflow: 'hidden' }}>
+                {messiImages.map((src, idx) => (
+                  <Box
+                    key={src}
+                    sx={{
+                      position: 'absolute',
+                      top: 0, left: 0, right: 0, bottom: 0,
+                      opacity: messiIndex === idx ? 1 : 0,
+                      transition: 'opacity 1s ease-in-out',
+                      backgroundImage: `url(${src})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center top'
+                    }}
+                  />
+                ))}
               </Box>
               <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: { xs: '100%', md: '70%' } }}>
                 <Typography variant="h4" sx={{ fontWeight: 900, color: '#00e676', mb: 2 }}>
