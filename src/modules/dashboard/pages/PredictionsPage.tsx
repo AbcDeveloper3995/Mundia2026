@@ -104,8 +104,8 @@ export const PredictionsPage = () => {
           match_id: sm.id,
           home_score: p!.predicted_home_score,
           away_score: p!.predicted_away_score,
-          home_team_id: sm.stage !== 'GROUP' ? sm.home_team_id : undefined,
-          away_team_id: sm.stage !== 'GROUP' ? sm.away_team_id : undefined,
+          home_team_id: sm.stage !== 'GROUP' ? (sm.home_team_id ?? undefined) : undefined,
+          away_team_id: sm.stage !== 'GROUP' ? (sm.away_team_id ?? undefined) : undefined,
           penalty_winner: p!.predicted_penalty_winner
         };
       });
