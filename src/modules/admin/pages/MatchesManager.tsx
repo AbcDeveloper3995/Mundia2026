@@ -141,6 +141,16 @@ export const MatchesManager = () => {
               const nextMatch = nextStageMatches[nextMatchIndex];
               if (nextMatch) {
                 await updateMatch(nextMatch.id, isHome ? { home_team_id: winnerId } : { away_team_id: winnerId });
+                
+                // Enviar al perdedor de la Semifinal al partido por el 3er Lugar
+                if (matchFinished.stage === 'SF') {
+                  const loserId = matchFinished.home_team_id === winnerId ? matchFinished.away_team_id : matchFinished.home_team_id;
+                  const thirdPlaceMatch = updatedMatches.find(m => m.stage === '3RD');
+                  if (thirdPlaceMatch && loserId) {
+                    await updateMatch(thirdPlaceMatch.id, isHome ? { home_team_id: loserId } : { away_team_id: loserId });
+                  }
+                }
+
                 loadInitialData();
               }
             }
