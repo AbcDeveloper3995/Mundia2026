@@ -17,6 +17,7 @@ export const TournamentBracket = ({ matches, teams }: TournamentBracketProps) =>
     { key: 'R16', name: 'Octavos' },
     { key: 'QF', name: 'Cuartos' },
     { key: 'SF', name: 'Semifinales' },
+    { key: '3RD', name: 'Tercer Lugar' },
     { key: 'FINAL', name: 'Final' }
   ];
 
