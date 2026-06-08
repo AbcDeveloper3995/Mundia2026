@@ -33,8 +33,47 @@ export const DashboardPage = () => {
   }, [user]);
 
   return (
-    <Box>
+    <Box sx={{ 
+      position: 'relative',
+      minHeight: '100vh',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: -24, left: -24, right: -24, bottom: -24, // to cover padding
+        backgroundImage: 'url(/argentina.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        opacity: 0.15,
+        zIndex: -1,
+        pointerEvents: 'none'
+      }
+    }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        
+        {/* Marquee Banner */}
+        <Box sx={{
+          width: '100%',
+          overflow: 'hidden',
+          bgcolor: 'error.main',
+          color: 'white',
+          py: 1.5, mb: 4, borderRadius: 2,
+          whiteSpace: 'nowrap',
+          display: 'flex',
+          boxShadow: '0 4px 20px rgba(211,47,47,0.4)'
+        }}>
+          <Box
+            component={motion.div}
+            animate={{ x: ['100vw', '-100vw'] }}
+            transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
+            sx={{ width: '100%' }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 900, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 2 }}>
+              ⚠️ ATENCIÓN: Si eres Madridista comienzas con -20ptos ⚠️
+            </Typography>
+          </Box>
+        </Box>
+
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 6 }}>
           <Box>
             <Typography variant="h2" component="h1" gutterBottom sx={{ 
@@ -61,6 +100,33 @@ export const DashboardPage = () => {
         </Box>
 
         <Grid container spacing={4} sx={{ mb: 6 }}>
+          {/* Messi Card */}
+          <Grid size={{ xs: 12 }}>
+            <Paper sx={{ 
+              p: 0, 
+              borderRadius: 4, 
+              bgcolor: 'rgba(10,10,10,0.85)', 
+              backdropFilter: 'blur(15px)', 
+              border: '1px solid rgba(0, 230, 118, 0.3)',
+              boxShadow: '0 10px 40px rgba(0,230,118,0.15)',
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              overflow: 'hidden'
+            }}>
+              <Box sx={{ width: { xs: '100%', md: '30%' }, position: 'relative', minHeight: { xs: 200, md: 'auto' } }}>
+                <img src="/messi.jpg" alt="Messi" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' }} />
+              </Box>
+              <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: { xs: '100%', md: '70%' } }}>
+                <Typography variant="h4" sx={{ fontWeight: 900, color: '#00e676', mb: 2 }}>
+                  Advertencia para Alain: 😄
+                </Typography>
+                <Typography variant="h6" sx={{ color: 'text.secondary', fontStyle: 'italic', lineHeight: 1.6, fontWeight: 400 }}>
+                  "La administración no se hace responsable de recaídas, traumas, sufrimiento, ansiedad y pesadillas ocasionados por el GOAT."
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+
           <Grid size={{ xs: 12, md: role === 'ADMIN' ? 6 : 12 }}  >
             <Paper sx={{ p: 4, height: '100%', borderRadius: 3, bgcolor: 'rgba(20,20,20,0.6)', backdropFilter: 'blur(10px)' }}>
               <Typography variant="h5" gutterBottom sx={{ color: 'secondary.main', fontWeight: 700 }}>
