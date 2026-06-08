@@ -58,7 +58,7 @@ export const MainLayout = () => {
     if (pathname.includes('/dashboard/predictions')) return 'url("/0ab71fd8b48a7b584e27b705e5d3ca80.jpg")';
     if (pathname.includes('/dashboard/leaderboard')) return 'url("/8c7cd01b131a89d006ecdedc59e50d60.jpg")';
     if (pathname.includes('/dashboard/results')) return 'url("/c3a9e850085fdda78773f1b8e8827614.jpg")';
-    return 'url("/096c8a0424449f785c828cff6a6465d1.jpg")'; // Inicio
+    return 'url("/argentina.jpg")'; // Inicio
   };
 
   return (
@@ -85,7 +85,7 @@ export const MainLayout = () => {
               zIndex: 0 
             }} 
           />
-          <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.85)', zIndex: 0 }} />
+          <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, bgcolor: location.pathname === '/dashboard' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.85)', zIndex: 0 }} />
         </>
       )}
 

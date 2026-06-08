@@ -33,22 +33,7 @@ export const DashboardPage = () => {
   }, [user]);
 
   return (
-    <Box sx={{ 
-      position: 'relative',
-      minHeight: '100vh',
-      '&::before': {
-        content: '""',
-        position: 'absolute',
-        top: -24, left: -24, right: -24, bottom: -24, // to cover padding
-        backgroundImage: 'url(/argentina.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        opacity: 0.15,
-        zIndex: -1,
-        pointerEvents: 'none'
-      }
-    }}>
+    <Box>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         
         {/* Marquee Banner */}
@@ -62,16 +47,19 @@ export const DashboardPage = () => {
           display: 'flex',
           boxShadow: '0 4px 20px rgba(211,47,47,0.4)'
         }}>
-          <Box
-            component={motion.div}
-            animate={{ x: ['100vw', '-100vw'] }}
-            transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
-            sx={{ width: '100%' }}
-          >
-            <Typography variant="h6" sx={{ fontWeight: 900, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 2 }}>
-              ⚠️ ATENCIÓN: Si eres Madridista comienzas con -20ptos ⚠️
-            </Typography>
-          </Box>
+          <Typography variant="h6" sx={{ 
+            fontWeight: 900, 
+            textTransform: 'uppercase', 
+            letterSpacing: 2,
+            display: 'inline-block',
+            animation: 'marquee 12s linear infinite',
+            '@keyframes marquee': {
+              '0%': { transform: 'translateX(100vw)' },
+              '100%': { transform: 'translateX(-100%)' }
+            }
+          }}>
+            ⚠️ ATENCIÓN: Si eres Madridista comienzas con -20ptos ⚠️
+          </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 6 }}>
@@ -113,8 +101,8 @@ export const DashboardPage = () => {
               flexDirection: { xs: 'column', md: 'row' },
               overflow: 'hidden'
             }}>
-              <Box sx={{ width: { xs: '100%', md: '30%' }, position: 'relative', minHeight: { xs: 200, md: 'auto' } }}>
-                <img src="/messi.jpg" alt="Messi" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Box sx={{ width: { xs: '100%', md: '30%' }, position: 'relative', minHeight: { xs: 250, md: 'auto' }, bgcolor: '#000' }}>
+                <img src="/messi.jpg" alt="Messi" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'contain' }} />
               </Box>
               <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: { xs: '100%', md: '70%' } }}>
                 <Typography variant="h4" sx={{ fontWeight: 900, color: '#00e676', mb: 2 }}>
