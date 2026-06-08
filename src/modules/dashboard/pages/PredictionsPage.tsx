@@ -473,13 +473,49 @@ export const PredictionsPage = () => {
           {groups.map(group => {
             const groupMatches = simulatedMatches.filter(m => m.stage === 'GROUP' && m.group_id === group.id).sort((a,b) => a.id.localeCompare(b.id));
             if (groupMatches.length === 0) return null;
+
+            // Calcular posiciones basadas en predicciones
+            const simulatedGroupMatchesForStandings = groupMatches.map(m => {
+              const p = predictions.find(pred => pred.match_id === m.id);
+              if (p && p.predicted_home_score !== -1 && p.predicted_away_score !== -1) {
+                return { ...m, is_finished: true, home_score: p.predicted_home_score, away_score: p.predicted_away_score };
+              }
+              return m;
+            });
+            const groupTeams = teams.filter(t => t.group_id === group.id);
+            const standings = calculateGroupStandings(groupTeams, simulatedGroupMatchesForStandings);
+            standings.sort((a, b) => {
+              if (b.points !== a.points) return b.points - a.points;
+              if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+              return b.goalsFor - a.goalsFor;
+            });
+
             return (
               <Box key={group.id} sx={{ mb: 6 }}>
                 <Typography variant="h5" sx={{ mb: 3, fontWeight: 900, color: 'secondary.main', pl: 2, borderLeft: '4px solid', borderColor: 'secondary.main', display: 'flex', alignItems: 'center' }}>
                   Grupo {group.name}
                 </Typography>
                 <Grid container spacing={3}>
-                  {groupMatches.map(m => renderMatchCard(m))}
+                  <Grid size={{ xs: 12, md: 9, lg: 10 }}>
+                    <Grid container spacing={3}>
+                      {groupMatches.map(m => renderMatchCard(m))}
+                    </Grid>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 3, lg: 2 }}>
+                    <Paper sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 1, height: '100%' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', mb: 1, textAlign: 'center', letterSpacing: 1 }}>POSICIONES</Typography>
+                      {standings.map((team, idx) => (
+                        <Box key={team.team_id} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: idx < 2 ? 1 : 0.4, transition: 'opacity 0.3s' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 900, width: 14 }}>{idx + 1}.</Typography>
+                            {team.flag ? <img src={team.flag} alt={team.name} style={{ width: 24, height: 16, objectFit: 'cover', borderRadius: 2 }} /> : <Box sx={{ width: 24, height: 16, bgcolor: '#333', borderRadius: 1 }} />}
+                            <Typography variant="caption" sx={{ fontWeight: 700 }}>{team.name.substring(0,3).toUpperCase()}</Typography>
+                          </Box>
+                          <Typography variant="caption" sx={{ fontWeight: 900, color: 'secondary.main' }}>{team.points}</Typography>
+                        </Box>
+                      ))}
+                    </Paper>
+                  </Grid>
                 </Grid>
               </Box>
             );
