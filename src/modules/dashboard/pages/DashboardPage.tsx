@@ -120,8 +120,9 @@ export const DashboardPage = () => {
                       opacity: messiIndex === idx ? 1 : 0,
                       transition: 'opacity 1s ease-in-out',
                       backgroundImage: `url(${src})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center top'
+                      backgroundSize: 'contain',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'center center'
                     }}
                   />
                 ))}
