@@ -4,6 +4,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { fetchGroups, fetchMatchesByGroup, fetchAllMatches, fetchTeams, updateMatch, resetKnockoutStage, fetchOfficialAwards, saveOfficialAwards, type Group, type Match, type Team, type OfficialAwards } from '@/modules/admin/services/admin.service';
 import { calculateGroupStandings, generateBracket, getWinner, type TeamStanding } from '@/utils/tournament.rules';
 import { TournamentBracket } from '../components/TournamentBracket';
+import { ThirdsRanking } from '../../../components/ThirdsRanking';
 import { recalculateAllLeaderboards } from '@/modules/predictions/services/predictions.service';
 import { TOP_PLAYERS } from '@/utils/players.data';
 import { motion } from 'framer-motion';
@@ -14,6 +15,7 @@ export const MatchesManager = () => {
   const [allTeams, setAllTeams] = useState<Team[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [matches, setMatches] = useState<Match[]>([]);
+  const [allGroupMatches, setAllGroupMatches] = useState<Match[]>([]);
   const [standings, setStandings] = useState<TeamStanding[]>([]);
   
   const [knockoutMatches, setKnockoutMatches] = useState<Match[]>([]);
@@ -43,11 +45,17 @@ export const MatchesManager = () => {
       setAllTeams(teamsData);
       if (awardsData) setOfficialAwards(awardsData);
       
+      const allGMatches = matchesData.filter(m => m.stage === 'GROUP');
+      setAllGroupMatches(allGMatches);
+
       if (groupsData.length > 0) {
-        setSelectedGroup(groupsData[0].id);
-        const groupMatches = matchesData.filter(m => m.group_id === groupsData[0].id);
+        // Find if we had a selected group, otherwise default to first
+        const selected = selectedGroup || groupsData[0].id;
+        setSelectedGroup(selected);
+        const groupMatches = matchesData.filter(m => m.group_id === selected);
         setMatches(groupMatches);
-        updateStandings(groupsData[0], groupMatches);
+        const targetGroup = groupsData.find(g => g.id === selected) || groupsData[0];
+        updateStandings(targetGroup, groupMatches);
       }
       
       setKnockoutMatches(matchesData.filter(m => m.stage !== 'GROUP').sort((a,b) => {
@@ -201,6 +209,53 @@ export const MatchesManager = () => {
     }
   };
 
+  const handleAutoFillGroups = async () => {
+    if (window.confirm('¿Estás seguro de que quieres auto-rellenar TODOS los resultados de la Fase de Grupos?')) {
+      try {
+        setLoading(true);
+        const allM = await fetchAllMatches();
+        const groupMatches = allM.filter(m => m.stage === 'GROUP');
+        
+        // Ejecutar en paralelo (72 updates)
+        await Promise.all(groupMatches.map(m => 
+          updateMatch(m.id, {
+            home_score: Math.floor(Math.random() * 4),
+            away_score: Math.floor(Math.random() * 4),
+            is_finished: true
+          })
+        ));
+        await loadInitialData();
+      } catch (err: any) {
+        setError("Error auto-rellenando grupos: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleClearGroups = async () => {
+    if (window.confirm('¿Estás seguro de que quieres limpiar TODOS los resultados de la Fase de Grupos?')) {
+      try {
+        setLoading(true);
+        const allM = await fetchAllMatches();
+        const groupMatches = allM.filter(m => m.stage === 'GROUP');
+        
+        await Promise.all(groupMatches.map(m => 
+          updateMatch(m.id, {
+            home_score: null,
+            away_score: null,
+            is_finished: false
+          })
+        ));
+        await loadInitialData();
+      } catch (err: any) {
+        setError("Error limpiando grupos: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const handleSaveOfficialAwards = async () => {
     try {
       await saveOfficialAwards(officialAwards);
@@ -227,6 +282,7 @@ export const MatchesManager = () => {
   if (loading) return <CircularProgress color="primary" />;
 
   const currentGroup = groups.find(g => g.id === selectedGroup);
+  const allGroupMatchesFinished = allGroupMatches.length > 0 && allGroupMatches.every(m => m.is_finished);
 
   return (
     <Box>
@@ -253,10 +309,18 @@ export const MatchesManager = () => {
       </Tabs>
 
       {tab === 0 && (
-        <Grid container spacing={4}>
-          {/* Tabla de Posiciones */}
-          <Grid size={{ xs: 12, lg: 8 }}  >
-             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+        <Box>
+          {allGroupMatchesFinished && (
+            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+              <Box sx={{ width: '100%', maxWidth: 800 }}>
+                <ThirdsRanking groups={groups} matches={allGroupMatches} />
+              </Box>
+            </Box>
+          )}
+          <Grid container spacing={4}>
+            {/* Tabla de Posiciones */}
+            <Grid size={{ xs: 12, lg: 8 }}  >
+               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
               <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>Tabla de Posiciones</Typography>
               <FormControl variant="outlined" size="small" sx={{ minWidth: 150 }}>
                 <Select value={selectedGroup} onChange={(e) => handleGroupChange(e.target.value)}>
@@ -296,7 +360,13 @@ export const MatchesManager = () => {
 
           {/* Lista de Partidos Grupo */}
           <Grid size={{ xs: 12, lg: 4 }}  >
-            <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: 'text.primary' }}>Resultados</Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>Resultados</Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button size="small" variant="contained" color="secondary" onClick={handleAutoFillGroups}>Rellenar Todo</Button>
+                <Button size="small" variant="outlined" color="error" onClick={handleClearGroups}>Limpiar Todo</Button>
+              </Box>
+            </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {matches.map((match, idx) => {
                 const home = currentGroup?.teams?.find(t => t.id === match.home_team_id);
@@ -350,7 +420,8 @@ export const MatchesManager = () => {
               })}
             </Box>
           </Grid>
-        </Grid>
+          </Grid>
+        </Box>
       )}
 
       {tab === 1 && (
