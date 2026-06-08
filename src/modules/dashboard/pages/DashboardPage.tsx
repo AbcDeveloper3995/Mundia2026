@@ -8,6 +8,7 @@ import { MainKPIs } from '../components/MainKPIs';
 import { FunStats } from '../components/FunStats';
 import { RivalryWidget } from '../components/RivalryWidget';
 import { GlobalWidgets } from '../components/GlobalWidgets';
+import { PodiumWidget } from '../components/PodiumWidget';
 import { RulesModal } from '../components/RulesModal';
 import GavelIcon from '@mui/icons-material/Gavel';
 
@@ -79,7 +80,7 @@ export const DashboardPage = () => {
               WebkitTextFillColor: 'transparent',
               fontWeight: 800
             }}>
-              Hola de nuevo,
+              Bienvenido,
             </Typography>
             <Typography variant="h5" color="text.secondary" sx={{ fontWeight: 400 }}>
               {user?.user_metadata?.username} <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, ml: 1 }}>[{role || 'Participante'}]</Box>
@@ -97,46 +98,6 @@ export const DashboardPage = () => {
         </Box>
 
         <Grid container spacing={4} sx={{ mb: 6 }}>
-          {/* Messi Card */}
-          <Grid size={{ xs: 12 }}>
-            <Paper sx={{ 
-              p: 0, 
-              borderRadius: 4, 
-              bgcolor: 'rgba(10,10,10,0.85)', 
-              backdropFilter: 'blur(15px)', 
-              border: '1px solid rgba(0, 230, 118, 0.3)',
-              boxShadow: '0 10px 40px rgba(0,230,118,0.15)',
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              overflow: 'hidden'
-            }}>
-              <Box sx={{ width: { xs: '100%', md: '30%' }, position: 'relative', minHeight: { xs: 250, md: 'auto' }, bgcolor: '#000', overflow: 'hidden' }}>
-                {messiImages.map((src, idx) => (
-                  <Box
-                    key={src}
-                    sx={{
-                      position: 'absolute',
-                      top: 0, left: 0, right: 0, bottom: 0,
-                      opacity: messiIndex === idx ? 1 : 0,
-                      transition: 'opacity 1s ease-in-out',
-                      backgroundImage: `url(${src})`,
-                      backgroundSize: 'contain',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'center center'
-                    }}
-                  />
-                ))}
-              </Box>
-              <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: { xs: '100%', md: '70%' } }}>
-                <Typography variant="h4" sx={{ fontWeight: 900, color: '#00e676', mb: 2 }}>
-                  Advertencia para Alain: 😄
-                </Typography>
-                <Typography variant="h6" sx={{ color: 'text.secondary', fontStyle: 'italic', lineHeight: 1.6, fontWeight: 400 }}>
-                  "La administración no se hace responsable de recaídas, traumas, sufrimiento, ansiedad y pesadillas ocasionados por el GOAT."
-                </Typography>
-              </Box>
-            </Paper>
-          </Grid>
 
           <Grid size={{ xs: 12, md: role === 'ADMIN' ? 6 : 12 }}  >
             <Paper sx={{ p: 4, height: '100%', borderRadius: 3, bgcolor: 'rgba(20,20,20,0.6)', backdropFilter: 'blur(10px)' }}>
@@ -151,7 +112,7 @@ export const DashboardPage = () => {
                   Ranking Global
                 </Button>
                 <Button component={RouterLink} to="/dashboard/results" variant="outlined" color="secondary" sx={{ fontWeight: 800 }}>
-                  Resultados Oficiales
+                  Clasificación
                 </Button>
               </Box>
             </Paper>
@@ -185,6 +146,55 @@ export const DashboardPage = () => {
           </Box>
         ) : stats ? (
           <Box sx={{ mt: 6 }}>
+            {/* Podium movido arriba */}
+            <Box sx={{ mb: 4 }}>
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, md: 12, lg: 8 }}>
+                  <Paper sx={{ 
+                    p: 0, 
+                    borderRadius: 4, 
+                    height: '100%',
+                    bgcolor: 'rgba(10,10,10,0.85)', 
+                    backdropFilter: 'blur(15px)', 
+                    border: '1px solid rgba(0, 230, 118, 0.3)',
+                    boxShadow: '0 10px 40px rgba(0,230,118,0.15)',
+                    display: 'flex',
+                    flexDirection: { xs: 'column', md: 'row' },
+                    overflow: 'hidden'
+                  }}>
+                    <Box sx={{ width: { xs: '100%', md: '30%' }, position: 'relative', minHeight: { xs: 250, md: 'auto' }, bgcolor: '#000', overflow: 'hidden' }}>
+                      {messiImages.map((src, idx) => (
+                        <Box
+                          key={src}
+                          sx={{
+                            position: 'absolute',
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            opacity: messiIndex === idx ? 1 : 0,
+                            transition: 'opacity 1s ease-in-out',
+                            backgroundImage: `url(${src})`,
+                            backgroundSize: 'contain',
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'center center'
+                          }}
+                        />
+                      ))}
+                    </Box>
+                    <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', justifyContent: 'center', width: { xs: '100%', md: '70%' } }}>
+                      <Typography variant="h4" sx={{ fontWeight: 900, color: '#00e676', mb: 2 }}>
+                        Advertencia para Alain: 😄
+                      </Typography>
+                      <Typography variant="h6" sx={{ color: 'text.secondary', fontStyle: 'italic', lineHeight: 1.6, fontWeight: 400 }}>
+                        "La administración no se hace responsable de recaídas, traumas, sufrimiento, ansiedad y pesadillas ocasionados por el GOAT."
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, md: 12, lg: 4 }}>
+                  <PodiumWidget stats={stats} />
+                </Grid>
+              </Grid>
+            </Box>
+
             {/* 1. KPIs Principales */}
             <MainKPIs stats={stats} />
 

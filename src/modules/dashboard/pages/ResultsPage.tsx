@@ -42,8 +42,8 @@ export const ResultsPage = () => {
   return (
     <Box sx={{ p: 4, maxWidth: 1400, mx: 'auto' }}>
       <Box sx={{ mb: 6, textAlign: 'center' }}>
-        <Typography variant="h2" sx={{ color: 'primary.main', fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2 }}>
-          Resultados Oficiales
+        <Typography variant="h3" sx={{ color: 'primary.main', fontWeight: 900 }}>
+          Clasificación
         </Typography>
         <Typography variant="subtitle1" sx={{ color: 'text.secondary', mt: 1, mb: 3 }}>
           Tablas de Posiciones y Llaves del Torneo en Tiempo Real

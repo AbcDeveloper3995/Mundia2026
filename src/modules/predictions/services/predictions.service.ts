@@ -8,6 +8,7 @@ export interface Prediction {
   predicted_away_team_id?: string;
   predicted_home_score: number;
   predicted_away_score: number;
+  predicted_penalty_winner?: 'HOME' | 'AWAY' | null;
   points_earned: number;
   created_at: string;
 }
@@ -98,6 +99,57 @@ export const savePrediction = async (
       .single();
     if (error) throw error;
     return data;
+  }
+};
+
+export const saveAllPredictions = async (
+  userId: string,
+  predictionsToSave: { match_id: string; home_score: number; away_score: number; home_team_id?: string; away_team_id?: string; penalty_winner?: 'HOME' | 'AWAY' | null }[]
+) => {
+  const { data: existing } = await supabase
+    .from('predictions')
+    .select('id, match_id')
+    .eq('user_id', userId);
+    
+  const existingMap = new Map(existing?.map(e => [e.match_id, e.id]) || []);
+  
+  const updates = [];
+  const inserts = [];
+  
+  for (const p of predictionsToSave) {
+    const existingId = existingMap.get(p.match_id);
+    if (existingId) {
+      updates.push({
+        id: existingId,
+        user_id: userId,
+        match_id: p.match_id,
+        predicted_home_score: p.home_score,
+        predicted_away_score: p.away_score,
+        predicted_home_team_id: p.home_team_id || null,
+        predicted_away_team_id: p.away_team_id || null,
+        predicted_penalty_winner: p.penalty_winner || null
+      });
+    } else {
+      inserts.push({
+        user_id: userId,
+        match_id: p.match_id,
+        predicted_home_score: p.home_score,
+        predicted_away_score: p.away_score,
+        predicted_home_team_id: p.home_team_id || null,
+        predicted_away_team_id: p.away_team_id || null,
+        predicted_penalty_winner: p.penalty_winner || null
+      });
+    }
+  }
+  
+  if (inserts.length > 0) {
+    const { error } = await supabase.from('predictions').insert(inserts);
+    if (error) throw error;
+  }
+  
+  if (updates.length > 0) {
+    const { error } = await supabase.from('predictions').upsert(updates);
+    if (error) throw error;
   }
 };
 

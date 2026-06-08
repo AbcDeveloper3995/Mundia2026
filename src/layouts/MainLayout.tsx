@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/auth.store';
 
 const routeMap: Record<string, string> = {
   'dashboard': 'Inicio',
-  'results': 'Resultados',
+  'results': 'Clasificación',
   'predictions': 'Simulador',
   'leaderboard': 'Ranking',
   'groups': 'Admin Grupos',
@@ -102,7 +102,7 @@ export const MainLayout = () => {
               <Link component={RouterLink} to="/dashboard" sx={{ textDecoration: 'none', color: 'text.primary', fontWeight: 700, '&:hover': { color: 'primary.main' } }}>Inicio</Link>
               <Link component={RouterLink} to="/dashboard/predictions" sx={{ textDecoration: 'none', color: 'text.primary', fontWeight: 700, '&:hover': { color: 'primary.main' } }}>Simulador</Link>
               <Link component={RouterLink} to="/dashboard/leaderboard" sx={{ textDecoration: 'none', color: 'text.primary', fontWeight: 700, '&:hover': { color: 'primary.main' } }}>Ranking</Link>
-              <Link component={RouterLink} to="/dashboard/results" sx={{ textDecoration: 'none', color: 'text.primary', fontWeight: 700, '&:hover': { color: 'primary.main' } }}>Resultados Reales</Link>
+              <Link component={RouterLink} to="/dashboard/results" sx={{ textDecoration: 'none', color: 'text.primary', fontWeight: 700, '&:hover': { color: 'primary.main' } }}>Clasificación</Link>
               {role === 'ADMIN' && (
                 <Link component={RouterLink} to="/dashboard/matches" sx={{ textDecoration: 'none', color: 'secondary.main', fontWeight: 700, '&:hover': { color: 'primary.main' } }}>Admin Panel</Link>
               )}

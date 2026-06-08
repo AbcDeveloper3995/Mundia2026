@@ -475,7 +475,7 @@ export const MatchesManager = () => {
             </Grid>
 
             <Button variant="contained" color="primary" fullWidth size="large" onClick={handleSaveOfficialAwards} sx={{ mt: 2, fontWeight: 800 }}>
-              Guardar Resultados Oficiales
+              Guardar Clasificación
             </Button>
           </Paper>
         </Box>

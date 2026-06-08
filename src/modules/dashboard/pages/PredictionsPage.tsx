@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Paper, Grid, CircularProgress, Alert, Button, TextField, Tabs, Tab, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
 import { fetchAllMatches, fetchTeams, fetchGroups, type Match, type Team, type Group } from '@/modules/admin/services/admin.service';
-import { fetchUserPredictions, savePrediction, fetchUserAwards, saveUserAwards, type Prediction, type PredictionAwards } from '@/modules/predictions/services/predictions.service';
+import { fetchUserPredictions, saveAllPredictions, fetchUserAwards, saveUserAwards, type Prediction, type PredictionAwards } from '@/modules/predictions/services/predictions.service';
 import { calculateGroupStandings, generateBracket, getWinner } from '@/utils/tournament.rules';
 import { TOP_PLAYERS } from '@/utils/players.data';
 import { useAuthStore } from '@/store/auth.store';
@@ -19,6 +19,7 @@ export const PredictionsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState(0);
   const [awardsLocked, setAwardsLocked] = useState(false);
+  const [isSavedSession, setIsSavedSession] = useState(false);
 
   useEffect(() => {
     if (user) loadData(user.id);
@@ -62,7 +63,9 @@ export const PredictionsPage = () => {
         return prev.map(p => p.match_id === matchId ? { 
           ...p, 
           predicted_home_score: type === 'home' ? score : p.predicted_home_score,
-          predicted_away_score: type === 'away' ? score : p.predicted_away_score
+          predicted_away_score: type === 'away' ? score : p.predicted_away_score,
+          // Si el usuario cambia el marcador y ya no es empate, limpiar el ganador de penales
+          predicted_penalty_winner: (type === 'home' ? score : p.predicted_home_score) === (type === 'away' ? score : p.predicted_away_score) ? p.predicted_penalty_winner : null
         } : p);
       } else {
         return [...prev, {
@@ -78,20 +81,47 @@ export const PredictionsPage = () => {
     });
   };
 
-  const handleSavePrediction = async (matchId: string, homeTeamId?: string | null, awayTeamId?: string | null) => {
-    const pred = predictions.find(p => p.match_id === matchId);
-    if (!pred || pred.predicted_home_score === -1 || pred.predicted_away_score === -1) {
-      alert("Por favor ingresa ambos marcadores antes de guardar.");
+  const handlePenaltyWinnerChange = (matchId: string, winner: 'HOME' | 'AWAY') => {
+    setPredictions(prev => {
+      const existing = prev.find(p => p.match_id === matchId);
+      if (existing) {
+        return prev.map(p => p.match_id === matchId ? { ...p, predicted_penalty_winner: winner } : p);
+      }
+      return prev;
+    });
+  };
+
+  const handleSaveAllPredictions = async () => {
+    if (!allTournamentMatchesPredicted) {
+      alert("Por favor completa todas las predicciones antes de guardar.");
       return;
     }
-
+    
     try {
-      await savePrediction(user!.id, matchId, pred.predicted_home_score, pred.predicted_away_score, homeTeamId || undefined, awayTeamId || undefined);
-      alert("¡Predicción guardada correctamente!");
+      const payload = simulatedMatches.map(sm => {
+        const p = predictions.find(pred => pred.match_id === sm.id);
+        return {
+          match_id: sm.id,
+          home_score: p!.predicted_home_score,
+          away_score: p!.predicted_away_score,
+          home_team_id: sm.stage !== 'GROUP' ? sm.home_team_id : undefined,
+          away_team_id: sm.stage !== 'GROUP' ? sm.away_team_id : undefined,
+          penalty_winner: p!.predicted_penalty_winner
+        };
+      });
+      await saveAllPredictions(user!.id, payload);
+      setIsSavedSession(true);
+      alert("¡Quiniela guardada correctamente!");
     } catch (err: any) {
-      alert("Error al guardar: " + err.message);
+      alert("Error al guardar la quiniela: " + err.message);
     }
   };
+
+  const isQuinielaSaved = useMemo(() => {
+    if (matches.length === 0) return false;
+    const savedCount = predictions.filter(p => p.id && !p.id.startsWith('temp-')).length;
+    return isSavedSession || savedCount === matches.length;
+  }, [matches, predictions, isSavedSession]);
 
   const handleSaveAwards = async () => {
     try {
@@ -117,6 +147,16 @@ export const PredictionsPage = () => {
     });
   }, [matches, predictions]);
 
+  const allTournamentMatchesPredicted = useMemo(() => {
+    if (matches.length === 0) return false;
+    return matches.every(m => {
+      const pred = predictions.find(p => p.match_id === m.id);
+      if (!pred || pred.predicted_home_score === -1 || pred.predicted_away_score === -1) return false;
+      if (m.stage !== 'GROUP' && pred.predicted_home_score === pred.predicted_away_score && !pred.predicted_penalty_winner) return false;
+      return true;
+    });
+  }, [matches, predictions]);
+
   const simulatedMatches = useMemo(() => {
     let sim = matches.map(m => ({ ...m })); // clon profundo de primer nivel
     
@@ -124,7 +164,14 @@ export const PredictionsPage = () => {
     sim = sim.map(m => {
       const p = predictions.find(pred => pred.match_id === m.id);
       if (p && p.predicted_home_score !== -1 && p.predicted_away_score !== -1) {
-         return { ...m, home_score: p.predicted_home_score, away_score: p.predicted_away_score, is_finished: true };
+         return { 
+           ...m, 
+           home_score: p.predicted_home_score, 
+           away_score: p.predicted_away_score, 
+           home_penalties: p.predicted_penalty_winner === 'HOME' ? 1 : 0,
+           away_penalties: p.predicted_penalty_winner === 'AWAY' ? 1 : 0,
+           is_finished: true 
+         };
       }
       return m;
     });
@@ -150,16 +197,24 @@ export const PredictionsPage = () => {
       stages.forEach(stage => {
          const stageMatches = sim.filter(m => m.stage === stage).sort((a,b) => a.id.localeCompare(b.id));
          const nextStageMatches = sim.filter(m => m.stage === nextStages[stage]).sort((a,b) => a.id.localeCompare(b.id));
+         const thirdPlaceMatches = stage === 'SF' ? sim.filter(m => m.stage === '3RD').sort((a,b) => a.id.localeCompare(b.id)) : [];
 
          stageMatches.forEach((m, idx) => {
             if (m.home_score !== null && m.away_score !== null) {
                const winnerId = getWinner(m as any);
+               const loserId = m.home_team_id === winnerId ? m.away_team_id : m.home_team_id;
+
                if (winnerId) {
                   const nextMatchIndex = Math.floor(idx / 2);
                   const isHome = idx % 2 === 0;
                   if (nextStageMatches[nextMatchIndex]) {
                      if (isHome) nextStageMatches[nextMatchIndex].home_team_id = winnerId;
                      else nextStageMatches[nextMatchIndex].away_team_id = winnerId;
+                  }
+                  
+                  if (stage === 'SF' && thirdPlaceMatches[0]) {
+                     if (isHome) thirdPlaceMatches[0].home_team_id = loserId;
+                     else thirdPlaceMatches[0].away_team_id = loserId;
                   }
                }
             }
@@ -258,16 +313,26 @@ export const PredictionsPage = () => {
     const realMatch = matches.find(m => m.id === match.id);
     const isLocked = realMatch?.is_finished;
     const { breakdown, total } = getPointsBreakdown(match, prediction);
+    
+    // Verificamos si tiene una predicción válida para mostrar borde verde o rojo
+    const isKnockout = match.stage !== 'GROUP';
+    const hasScores = prediction && prediction.predicted_home_score !== -1 && prediction.predicted_away_score !== -1;
+    const isTie = hasScores && prediction.predicted_home_score === prediction.predicted_away_score;
+    const isValidKnockoutTie = isKnockout && isTie ? !!prediction.predicted_penalty_winner : true;
+    const isFullyPredicted = hasScores && isValidKnockoutTie;
+    
+    // Si la card es de un partido pasado o bloqueado, usamos colores tenues, sino rojo (falta) o verde (listo)
+    const borderColor = isLocked ? 'rgba(255,255,255,0.1)' : (isFullyPredicted ? 'success.main' : 'error.main');
 
     return (
       <Grid size={{ xs: 12, md: 6 }}   key={match.id} sx={{ display: 'flex' }}>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ width: '100%', display: 'flex' }}>
-          <Paper sx={{ width: '100%', p: 3, borderRadius: 3, border: '1px solid', borderColor: isLocked ? 'rgba(255,255,255,0.1)' : 'primary.main', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <Paper sx={{ width: '100%', p: 3, borderRadius: 3, border: '1px solid', borderColor: borderColor, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'border-color 0.3s' }}>
             
             {realMatch && (
               <Box sx={{ position: 'absolute', top: 0, right: 0, bgcolor: isLocked ? 'rgba(46, 125, 50, 0.2)' : 'rgba(255, 160, 0, 0.2)', px: 2, py: 0.5, borderBottomLeftRadius: 8 }}>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: isLocked ? 'success.light' : 'warning.light' }}>
-                  {isLocked ? 'Partido Finalizado' : 'Partido Pendiente'}
+                  {isLocked ? `Resultado Real: ${realMatch.home_score} - ${realMatch.away_score}` : 'Partido Pendiente'}
                 </Typography>
               </Box>
             )}
@@ -292,7 +357,7 @@ export const PredictionsPage = () => {
                     maxLength={2}
                     value={hScore ?? ''}
                     onChange={(e) => handlePredictionChange(match.id, 'home', e.target.value)}
-                    disabled={isLocked || (!home && !away)}
+                    disabled={isLocked || (!home && !away) || isQuinielaSaved}
                     style={{ width: '100%', height: '100%', background: 'transparent', border: 'none', color: 'white', textAlign: 'center', fontSize: '1.4rem', fontWeight: 900, outline: 'none' }}
                   />
                 </Box>
@@ -304,7 +369,7 @@ export const PredictionsPage = () => {
                     maxLength={2}
                     value={aScore ?? ''}
                     onChange={(e) => handlePredictionChange(match.id, 'away', e.target.value)}
-                    disabled={isLocked || (!home && !away)}
+                    disabled={isLocked || (!home && !away) || isQuinielaSaved}
                     style={{ width: '100%', height: '100%', background: 'transparent', border: 'none', color: 'white', textAlign: 'center', fontSize: '1.4rem', fontWeight: 900, outline: 'none' }}
                   />
                 </Box>
@@ -318,6 +383,34 @@ export const PredictionsPage = () => {
               </Box>
             </Box>
 
+            {!isLocked && isKnockout && isTie && home && away && (
+              <Box sx={{ mb: 2, p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, textAlign: 'center' }}>
+                <Typography variant="caption" sx={{ color: 'warning.main', fontWeight: 800, mb: 1, display: 'block' }}>
+                  Empate. ¿Quién gana en penales?
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+                  <Button 
+                    variant={prediction.predicted_penalty_winner === 'HOME' ? 'contained' : 'outlined'} 
+                    color="primary" 
+                    size="small" 
+                    onClick={() => handlePenaltyWinnerChange(match.id, 'HOME')}
+                    disabled={isQuinielaSaved}
+                  >
+                    {home.name}
+                  </Button>
+                  <Button 
+                    variant={prediction.predicted_penalty_winner === 'AWAY' ? 'contained' : 'outlined'} 
+                    color="primary" 
+                    size="small" 
+                    onClick={() => handlePenaltyWinnerChange(match.id, 'AWAY')}
+                    disabled={isQuinielaSaved}
+                  >
+                    {away.name}
+                  </Button>
+                </Box>
+              </Box>
+            )}
+
             <Box sx={{ display: 'flex', flexDirection: 'column', mt: 'auto', pt: 2, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 {isLocked || breakdown.length > 0 ? (
@@ -328,19 +421,6 @@ export const PredictionsPage = () => {
                   <Typography variant="caption" color="text.secondary">
                     Acierto exacto: 5pts | Ganador: 3pts
                   </Typography>
-                )}
-
-                {!isLocked && home && away && (
-                  <Button 
-                    variant="contained" 
-                    color="primary" 
-                    size="small" 
-                    onClick={() => handleSavePrediction(match.id, match.home_team_id, match.away_team_id)}
-                    disabled={hScore === '' || hScore == null || aScore === '' || aScore == null}
-                    sx={{ fontWeight: 700, px: 3, borderRadius: 2 }}
-                  >
-                    Guardar
-                  </Button>
                 )}
               </Box>
 
@@ -370,6 +450,11 @@ export const PredictionsPage = () => {
         <Typography variant="subtitle1" color="text.secondary">
           Completa toda tu quiniela hasta la final. Los equipos avanzarán automáticamente según tus predicciones.
         </Typography>
+        {isQuinielaSaved && (
+          <Alert severity="success" sx={{ mt: 2, fontWeight: 700 }}>
+            ¡Tu quiniela está guardada y bloqueada! Mucha suerte.
+          </Alert>
+        )}
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
@@ -382,6 +467,9 @@ export const PredictionsPage = () => {
 
       {tab === 0 && (
         <Box>
+          <Alert severity="info" sx={{ mb: 4 }}>
+            Debes completar todos los resultados de la fase de grupos para que se desbloquee la pestaña de Fase Eliminatoria.
+          </Alert>
           {groups.map(group => {
             const groupMatches = simulatedMatches.filter(m => m.stage === 'GROUP' && m.group_id === group.id).sort((a,b) => a.id.localeCompare(b.id));
             if (groupMatches.length === 0) return null;
@@ -405,7 +493,7 @@ export const PredictionsPage = () => {
             Predice los resultados de los grupos para que los equipos clasificados aparezcan aquí en las llaves.
           </Alert>
           <Grid container spacing={3}>
-             {['R32', 'R16', 'QF', 'SF', 'FINAL'].map(stage => (
+             {['R32', 'R16', 'QF', 'SF', '3RD', 'FINAL'].map(stage => (
                <Box key={stage} sx={{ width: '100%', mb: 4 }}>
                   <Typography variant="h5" sx={{ ml: 2, mb: 2, fontWeight: 800, color: 'secondary.main' }}>Fase: {stage}</Typography>
                   <Grid container spacing={3}>
@@ -414,6 +502,19 @@ export const PredictionsPage = () => {
                </Box>
              ))}
           </Grid>
+          
+          <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center' }}>
+            <Button
+              variant="contained"
+              color={isQuinielaSaved ? 'success' : 'primary'}
+              size="large"
+              onClick={handleSaveAllPredictions}
+              disabled={!allTournamentMatchesPredicted || isQuinielaSaved}
+              sx={{ fontWeight: 900, px: 6, py: 1.5, borderRadius: 3, fontSize: '1.2rem' }}
+            >
+              {isQuinielaSaved ? 'Quiniela Completada' : 'Guardar Quiniela'}
+            </Button>
+          </Box>
         </Box>
       )}
 
