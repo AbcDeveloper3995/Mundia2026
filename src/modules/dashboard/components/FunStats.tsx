@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 // Iconos para cada premio
 const trophyConfig = {
   nostradamus: { title: '🔮 El Tiza', desc: 'Más marcadores exactos', color: '#9c27b0' },
-  suertudo: { title: '🎲 El Prospecto', desc: 'Más puntos sin marcadores exactos', color: '#ff9800' },
+  suertudo: { title: '🎲 El Prospecto', desc: 'Más resultados acertados', color: '#ff9800' },
   mufa: { title: '💀 El Merma', desc: 'Peor porcentaje de aciertos', color: '#f44336' },
   casiCasi: { title: '😭 Casi Casi', desc: 'A un gol de acertar exacto', color: '#ffeb3b' },
   francotirador: { title: '🎯 Durakito', desc: 'Mejor porcentaje de exactos', color: '#00e676' },
@@ -19,7 +19,7 @@ interface FunStatsProps {
 export const FunStats = ({ stats }: FunStatsProps) => {
   const cards = [
     { key: 'nostradamus', data: stats.nostradamus, value: stats.nostradamus ? `${stats.nostradamus.count} exactos` : 'Nadie aún' },
-    { key: 'suertudo', data: stats.suertudo, value: stats.suertudo ? `${stats.suertudo.points} pts` : 'Nadie aún' },
+    { key: 'suertudo', data: stats.suertudo, value: stats.suertudo ? `${stats.suertudo.count} aciertos` : 'Nadie aún' },
     { key: 'mufa', data: stats.mufa, value: stats.mufa ? `${stats.mufa.percentage}% efectividad` : 'Nadie aún' },
     { key: 'casiCasi', data: stats.casiCasi, value: stats.casiCasi ? `${stats.casiCasi.count} veces` : 'Nadie aún' },
     { key: 'francotirador', data: stats.francotirador, value: stats.francotirador ? `${stats.francotirador.percentage}% exactos` : 'Nadie aún' },

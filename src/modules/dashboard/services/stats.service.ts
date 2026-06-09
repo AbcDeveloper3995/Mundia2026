@@ -29,7 +29,7 @@ export interface DashboardStats {
 
   // Fun Stats
   nostradamus: { username: string; count: number } | null;
-  suertudo: { username: string; points: number } | null;
+  suertudo: { username: string; count: number } | null;
   mufa: { username: string; percentage: number } | null;
   casiCasi: { username: string; count: number } | null;
   francotirador: { username: string; percentage: number } | null;
@@ -152,7 +152,7 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
 
   // Calculate winners for each category
   const findWinner = (scorer: (uid: string) => number, minTotalMatches: number = 0, reverse: boolean = false) => {
-    let bestUid: string | null = null;
+    let bestUids: string[] = [];
     let bestScore = reverse ? Infinity : -Infinity;
 
     Object.keys(userStats).forEach(uid => {
@@ -160,14 +160,25 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
         const score = scorer(uid);
         if (reverse ? score < bestScore : score > bestScore) {
           bestScore = score;
-          bestUid = uid;
+          bestUids = [uid];
+        } else if (score === bestScore) {
+          bestUids.push(uid);
         }
       }
     });
 
-    if (!bestUid) return null;
+    if (bestUids.length === 0) return null;
+    
+    const usernames = bestUids.map(uid => leaderboard.find(l => l.userId === uid)?.username || 'Desconocido');
+    let displayUsername = usernames[0];
+    if (usernames.length === 2) {
+      displayUsername = `${usernames[0]} y ${usernames[1]}`;
+    } else if (usernames.length > 2) {
+      displayUsername = `${usernames[0]} y ${usernames.length - 1} más`;
+    }
+
     return {
-      username: leaderboard.find(l => l.userId === bestUid)?.username || 'Desconocido',
+      username: displayUsername,
       score: bestScore
     };
   };
@@ -175,14 +186,8 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   const nostradamusRaw = findWinner(uid => userStats[uid].exact);
   const nostradamus = nostradamusRaw && nostradamusRaw.score > 0 ? { username: nostradamusRaw.username, count: nostradamusRaw.score } : null;
 
-  const suertudoRaw = findWinner(uid => {
-    const lEntry = leaderboard.find(l => l.userId === uid);
-    const pts = lEntry ? lEntry.totalPoints : 0;
-    // Base 1000. Restar 100 por cada acierto exacto. Sumar puntos totales.
-    // Quien tenga menos aciertos exactos pero más puntos ganará.
-    return (1000 - userStats[uid].exact * 100) + pts;
-  });
-  const suertudo = suertudoRaw && suertudoRaw.score > 0 ? { username: suertudoRaw.username, points: suertudoRaw.score } : null;
+  const suertudoRaw = findWinner(uid => userStats[uid].correct);
+  const suertudo = suertudoRaw && suertudoRaw.score > 0 ? { username: suertudoRaw.username, count: suertudoRaw.score } : null;
 
   const mufaRaw = findWinner(uid => (userStats[uid].correct / userStats[uid].total) * 100, 1, true); // Min 1 match
   const mufa = mufaRaw && mufaRaw.score >= 0 ? { username: mufaRaw.username, percentage: Math.round(mufaRaw.score) } : null;
@@ -197,17 +202,36 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   const reyEliminatorias = reyEliminatoriasRaw && reyEliminatoriasRaw.score > 0 ? { username: reyEliminatoriasRaw.username, points: reyEliminatoriasRaw.score } : null;
 
   // Visionario (premios especiales)
-  let bestVisionario = { username: '', points: -1 };
+  let maxVisionarioPoints = -1;
+  let visionarioWinners: string[] = [];
+
   awards.forEach(a => {
     let vp = 0;
     if (a.top_scorer || a.top_assist || a.mvp) {
       vp += 10; 
     }
-    if (vp > bestVisionario.points) {
-      bestVisionario = { username: leaderboard.find(l => l.userId === a.user_id)?.username || '', points: vp };
+    if (vp > maxVisionarioPoints && vp > 0) {
+      maxVisionarioPoints = vp;
+      const uname = leaderboard.find(l => l.userId === a.user_id)?.username || '';
+      visionarioWinners = uname ? [uname] : [];
+    } else if (vp === maxVisionarioPoints && maxVisionarioPoints > 0) {
+      const uname = leaderboard.find(l => l.userId === a.user_id)?.username || '';
+      if (uname && !visionarioWinners.includes(uname)) {
+        visionarioWinners.push(uname);
+      }
     }
   });
-  const visionario = bestVisionario.points > 0 ? bestVisionario : null;
+
+  let visionario = null;
+  if (visionarioWinners.length > 0) {
+    let displayUsername = visionarioWinners[0];
+    if (visionarioWinners.length === 2) {
+      displayUsername = `${visionarioWinners[0]} y ${visionarioWinners[1]}`;
+    } else if (visionarioWinners.length > 2) {
+      displayUsername = `${visionarioWinners[0]} y ${visionarioWinners.length - 1} más`;
+    }
+    visionario = { username: displayUsername, points: maxVisionarioPoints };
+  }
 
   // --- RIVALRY ---
   let rival = null;
