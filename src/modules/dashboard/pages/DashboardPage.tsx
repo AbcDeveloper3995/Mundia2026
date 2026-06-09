@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { fetchDashboardStats, type DashboardStats } from '../services/stats.service';
 import { MainKPIs } from '../components/MainKPIs';
 import { FunStats } from '../components/FunStats';
-import { RivalryWidget } from '../components/RivalryWidget';
+import { FavoritesKPIs } from '../components/FavoritesKPIs';
 import { GlobalWidgets } from '../components/GlobalWidgets';
 import { PodiumWidget } from '../components/PodiumWidget';
 import { RulesModal } from '../components/RulesModal';
@@ -45,7 +45,7 @@ export const DashboardPage = () => {
   return (
     <Box>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        
+
         {/* Marquee Banner */}
         <Box sx={{
           width: '100%',
@@ -57,9 +57,9 @@ export const DashboardPage = () => {
           display: 'flex',
           boxShadow: '0 4px 20px rgba(211,47,47,0.4)'
         }}>
-          <Typography variant="h6" sx={{ 
-            fontWeight: 900, 
-            textTransform: 'uppercase', 
+          <Typography variant="h6" sx={{
+            fontWeight: 900,
+            textTransform: 'uppercase',
             letterSpacing: 2,
             display: 'inline-block',
             animation: 'marquee 12s linear infinite',
@@ -73,22 +73,19 @@ export const DashboardPage = () => {
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 6 }}>
-          <Box>
-            <Typography variant="h2" component="h1" gutterBottom sx={{ 
-              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="h2" component="h1" gutterBottom sx={{
               fontWeight: 800
             }}>
-              Bienvenido,
+              Bienvenido, {user?.user_metadata?.username}
             </Typography>
-            <Typography variant="h5" color="text.secondary" sx={{ fontWeight: 400 }}>
-              {user?.user_metadata?.username} <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, ml: 1 }}>[{role || 'Participante'}]</Box>
+            <Typography variant="h2" component="h1" color="text.secondary" sx={{ fontWeight: 400 }}>
+              <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, ml: 1 }}>[{role || 'Participante'}]</Box>
             </Typography>
           </Box>
-          <Button 
-            variant="outlined" 
-            color="primary" 
+          <Button
+            variant="outlined"
+            color="primary"
             onClick={() => setRulesOpen(true)}
             startIcon={<GavelIcon />}
             sx={{ mt: { xs: 2, sm: 0 }, borderRadius: 2, fontWeight: 700 }}
@@ -117,7 +114,7 @@ export const DashboardPage = () => {
               </Box>
             </Paper>
           </Grid>
-          
+
           {role === 'ADMIN' && (
             <Grid size={{ xs: 12, md: 6 }}  >
               <Paper sx={{ p: 4, height: '100%', borderRadius: 3, bgcolor: 'rgba(20,20,20,0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
@@ -150,12 +147,12 @@ export const DashboardPage = () => {
             <Box sx={{ mb: 4 }}>
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12, md: 12, lg: 8 }}>
-                  <Paper sx={{ 
-                    p: 0, 
-                    borderRadius: 4, 
+                  <Paper sx={{
+                    p: 0,
+                    borderRadius: 4,
                     height: '100%',
-                    bgcolor: 'rgba(10,10,10,0.85)', 
-                    backdropFilter: 'blur(15px)', 
+                    bgcolor: 'rgba(10,10,10,0.85)',
+                    backdropFilter: 'blur(15px)',
                     border: '1px solid rgba(0, 230, 118, 0.3)',
                     boxShadow: '0 10px 40px rgba(0,230,118,0.15)',
                     display: 'flex',
@@ -196,17 +193,17 @@ export const DashboardPage = () => {
             </Box>
 
             {/* 1. KPIs Principales */}
-            <MainKPIs stats={stats} />
+            <MainKPIs stats={stats} myUsername={user?.user_metadata?.username} />
+
+            {/* Favoritos */}
+            <FavoritesKPIs stats={stats} />
 
             {/* 2. Estadísticas Divertidas (Salón de la fama) */}
             <FunStats stats={stats} />
 
             {/* 3. Comparaciones y Widgets */}
             <Grid container spacing={4}>
-              <Grid size={{ xs: 12, lg: 4 }}  >
-                <RivalryWidget stats={stats} myUsername={user?.user_metadata?.username || 'Tú'} />
-              </Grid>
-              <Grid size={{ xs: 12, lg: 8 }}  >
+              <Grid size={{ xs: 12, lg: 12 }}  >
                 <GlobalWidgets stats={stats} />
               </Grid>
             </Grid>
