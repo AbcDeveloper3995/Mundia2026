@@ -1,6 +1,6 @@
 import { supabase } from '@/services/supabase';
 import { fetchLeaderboard, type LeaderboardEntry, type Prediction, type PredictionAwards } from '@/modules/predictions/services/predictions.service';
-import { fetchAllMatches, fetchTeams, type Match } from '@/modules/admin/services/admin.service';
+import { fetchAllMatches, fetchTeams, fetchOfficialAwards, type Match } from '@/modules/admin/services/admin.service';
 
 export interface MatchStatsInfo {
   matchName: string;
@@ -57,13 +57,14 @@ export interface DashboardStats {
 
 export const fetchDashboardStats = async (userId: string): Promise<DashboardStats> => {
   // 1. Fetch all required data in parallel
-  const [leaderboard, matches, teams, { data: predsData }, { data: awardsData }, { data: profilesData }] = await Promise.all([
+  const [leaderboard, matches, teams, { data: predsData }, { data: awardsData }, { data: profilesData }, officialAwards] = await Promise.all([
     fetchLeaderboard(),
     fetchAllMatches(),
     fetchTeams(),
     supabase.from('predictions').select('*'),
     supabase.from('prediction_awards').select('*'),
-    supabase.from('profiles').select('id, username')
+    supabase.from('profiles').select('id, username'),
+    fetchOfficialAwards()
   ]);
 
   const predictions = (predsData || []) as Prediction[];
@@ -215,35 +216,50 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   const reyEliminatorias = reyEliminatoriasRaw && reyEliminatoriasRaw.score > 0 ? { username: reyEliminatoriasRaw.username, points: reyEliminatoriasRaw.score } : null;
 
   // Visionario (premios especiales)
-  let maxVisionarioPoints = -1;
-  let visionarioWinners: string[] = [];
-
-  awards.forEach(a => {
-    let vp = 0;
-    if (a.top_scorer || a.top_assist || a.mvp) {
-      vp += 10; 
-    }
-    if (vp > maxVisionarioPoints && vp > 0) {
-      maxVisionarioPoints = vp;
-      const uname = leaderboard.find(l => l.userId === a.user_id)?.username || '';
-      visionarioWinners = uname ? [uname] : [];
-    } else if (vp === maxVisionarioPoints && maxVisionarioPoints > 0) {
-      const uname = leaderboard.find(l => l.userId === a.user_id)?.username || '';
-      if (uname && !visionarioWinners.includes(uname)) {
-        visionarioWinners.push(uname);
-      }
-    }
-  });
-
   let visionario = null;
-  if (visionarioWinners.length > 0) {
-    let displayUsername = visionarioWinners[0];
-    if (visionarioWinners.length === 2) {
-      displayUsername = `${visionarioWinners[0]} y ${visionarioWinners[1]}`;
-    } else if (visionarioWinners.length > 2) {
-      displayUsername = `${visionarioWinners[0]} y ${visionarioWinners.length - 1} más`;
+  const finalMatch = matches.find(m => m.stage === 'FINAL');
+  
+  if (officialAwards && (officialAwards.top_scorer || officialAwards.top_assist || officialAwards.mvp || officialAwards.champion_team_id)) {
+    let maxVisionarioPoints = -1;
+    let visionarioWinners: string[] = [];
+
+    awards.forEach(a => {
+      let vp = 0;
+      if (officialAwards.top_scorer && a.top_scorer === officialAwards.top_scorer) vp += 10;
+      if (officialAwards.top_assist && a.top_assist === officialAwards.top_assist) vp += 10;
+      if (officialAwards.mvp && a.mvp === officialAwards.mvp) vp += 10;
+      
+      // Champion is checked from their FINAL match prediction
+      if (officialAwards.champion_team_id) {
+        const finalPred = predictions.find(p => p.user_id === a.user_id && p.match_id === finalMatch?.id);
+        if (finalPred) {
+          const predWinnerId = finalPred.predicted_home_score > finalPred.predicted_away_score ? finalPred.predicted_home_team_id :
+                               finalPred.predicted_home_score < finalPred.predicted_away_score ? finalPred.predicted_away_team_id : null;
+          if (predWinnerId === officialAwards.champion_team_id) vp += 20;
+        }
+      }
+
+      if (vp > maxVisionarioPoints && vp > 0) {
+        maxVisionarioPoints = vp;
+        const uname = leaderboard.find(l => l.userId === a.user_id)?.username || '';
+        visionarioWinners = uname ? [uname] : [];
+      } else if (vp === maxVisionarioPoints && maxVisionarioPoints > 0) {
+        const uname = leaderboard.find(l => l.userId === a.user_id)?.username || '';
+        if (uname && !visionarioWinners.includes(uname)) {
+          visionarioWinners.push(uname);
+        }
+      }
+    });
+
+    if (visionarioWinners.length > 0) {
+      let displayUsername = visionarioWinners[0];
+      if (visionarioWinners.length === 2) {
+        displayUsername = `${visionarioWinners[0]} y ${visionarioWinners[1]}`;
+      } else if (visionarioWinners.length > 2) {
+        displayUsername = `${visionarioWinners[0]} y ${visionarioWinners.length - 1} más`;
+      }
+      visionario = { username: displayUsername, points: maxVisionarioPoints };
     }
-    visionario = { username: displayUsername, points: maxVisionarioPoints };
   }
 
   // --- RIVALRY ---
@@ -364,7 +380,6 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   const mvpCounts: Record<string, number> = {};
   const scorerCounts: Record<string, number> = {};
 
-  const finalMatch = matches.find(m => m.stage === 'FINAL');
   if (finalMatch) {
     predictions.filter(p => p.match_id === finalMatch.id).forEach(p => {
       let winnerTeamId = null;
