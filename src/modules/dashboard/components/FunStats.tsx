@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 // Iconos para cada premio
 const trophyConfig = {
   nostradamus: { title: '🔮 El Tiza', desc: 'Más marcadores exactos', color: '#9c27b0' },
-  suertudo: { title: '🎲 El Prospecto', desc: 'Más resultados acertados', color: '#ff9800' },
+  suertudo: { title: '🎲 El Tanke', desc: 'Más resultados acertados', color: '#ff9800' },
   mufa: { title: '💀 El Merma', desc: 'Peor porcentaje de aciertos', color: '#f44336' },
   casiCasi: { title: '😭 Casi Casi', desc: 'A un gol de acertar exacto', color: '#ffeb3b' },
   francotirador: { title: '🎯 Durakito', desc: 'Mejor porcentaje de exactos', color: '#00e676' },
