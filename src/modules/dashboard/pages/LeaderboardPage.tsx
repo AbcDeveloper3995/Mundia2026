@@ -4,6 +4,10 @@ import { fetchLeaderboard, type LeaderboardEntry } from '@/modules/predictions/s
 import { useAuthStore } from '@/store/auth.store';
 import { motion } from 'framer-motion';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import RemoveIcon from '@mui/icons-material/Remove';
+import { Tooltip } from '@mui/material';
 
 export const LeaderboardPage = () => {
   const { user } = useAuthStore();
@@ -59,6 +63,7 @@ export const LeaderboardPage = () => {
               <TableRow>
                 <TableCell sx={{ fontWeight: 800, width: 100, textAlign: 'center', py: 3, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.85rem' }}>Pos</TableCell>
                 <TableCell sx={{ fontWeight: 800, py: 3, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.85rem' }}>Participante</TableCell>
+                <TableCell sx={{ fontWeight: 800, textAlign: 'center', py: 3, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.85rem' }}>Racha</TableCell>
                 <TableCell sx={{ fontWeight: 800, textAlign: 'right', py: 3, color: 'primary.main', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.85rem' }}>Puntos</TableCell>
                 <TableCell sx={{ fontWeight: 800, textAlign: 'right', py: 3, color: '#ffc107', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.85rem' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
@@ -70,7 +75,7 @@ export const LeaderboardPage = () => {
             <TableBody>
               {leaderboard.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+                  <TableCell colSpan={5} sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
                     Aún no hay puntos registrados. ¡Empieza a predecir!
                   </TableCell>
                 </TableRow>
@@ -92,10 +97,29 @@ export const LeaderboardPage = () => {
                       }}
                     >
                       <TableCell sx={{ textAlign: 'center', fontWeight: 900, fontSize: idx < 3 ? '1.3rem' : '1.1rem', color: idx === 0 ? '#ffd700' : idx === 1 ? '#e0e0e0' : idx === 2 ? '#cd7f32' : 'text.secondary' }}>
-                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                          {entry.trend === 'UP' && <ArrowDropUpIcon color="success" />}
+                          {entry.trend === 'DOWN' && <ArrowDropDownIcon color="error" />}
+                          {entry.trend === 'SAME' && <RemoveIcon sx={{ color: 'text.disabled', fontSize: 16 }} />}
+                          {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
+                        </Box>
                       </TableCell>
                       <TableCell sx={{ fontWeight: isMe ? 800 : 600, color: isMe ? '#00E676' : 'text.primary', fontSize: '1.1rem' }}>
                         {isMe ? `${user?.user_metadata?.username} (Tú)` : entry.username}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                          {(entry.recentForm || []).map((status, i) => (
+                            <Tooltip key={i} title={status === 'EXACT' ? 'Acertó marcador exacto (+5pts)' : status === 'WIN' ? 'Acertó ganador (+3pts)' : 'No sumó puntos'}>
+                              <Box sx={{ 
+                                width: 12, height: 12, borderRadius: '50%',
+                                bgcolor: status === 'EXACT' ? '#00e676' : status === 'WIN' ? '#ffeb3b' : '#f44336',
+                                border: '1px solid rgba(0,0,0,0.5)',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                              }} />
+                            </Tooltip>
+                          ))}
+                        </Box>
                       </TableCell>
                       <TableCell sx={{ textAlign: 'right', fontWeight: 900, fontSize: '1.2rem', color: 'primary.main' }}>
                         {entry.totalPoints} <Typography component="span" sx={{ fontSize: '0.8rem', color: 'text.secondary', fontWeight: 600 }}>pts</Typography>

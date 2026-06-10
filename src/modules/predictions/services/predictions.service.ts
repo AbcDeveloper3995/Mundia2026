@@ -347,19 +347,20 @@ export interface LeaderboardEntry {
   username: string;
   totalPoints: number;
   coins: number;
+  trend?: 'UP' | 'DOWN' | 'SAME';
+  recentForm?: ('EXACT' | 'WIN' | 'LOSS')[];
 }
 
 export const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
-  // Como no hay relación Foreign Key directa entre prediction_awards y profiles configurada en Supabase,
-  // hacemos las dos peticiones y las unimos en memoria.
-  const [awardsResponse, profilesResponse] = await Promise.all([
+  const [awardsResponse, profilesResponse, matchesResponse, predsResponse] = await Promise.all([
     supabase.from('prediction_awards').select('user_id, total_points, coins'),
-    supabase.from('profiles').select('id, username')
+    supabase.from('profiles').select('id, username'),
+    supabase.from('matches').select('id, match_date, is_finished').eq('is_finished', true),
+    supabase.from('predictions').select('user_id, match_id, points_earned')
   ]);
 
   if (awardsResponse.error) throw awardsResponse.error;
   
-  // Crear un diccionario (mapa) de id -> username para una búsqueda instantánea
   const profilesMap: Record<string, string> = {};
   if (profilesResponse.data) {
     profilesResponse.data.forEach(p => {
@@ -367,12 +368,68 @@ export const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
     });
   }
 
-  const entries: LeaderboardEntry[] = (awardsResponse.data || []).map((row: any) => ({
+  const matches = (matchesResponse.data || []).sort((a, b) => {
+    if (a.match_date && b.match_date) return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
+    return a.id.localeCompare(b.id);
+  });
+  const predictions = predsResponse.data || [];
+
+  const lastMatch = matches.length > 0 ? matches[matches.length - 1] : null;
+  const last3Matches = matches.slice(-3); // Toma los últimos 3
+
+  const baseEntries = (awardsResponse.data || []).map((row: any) => ({
     userId: row.user_id,
     username: profilesMap[row.user_id] || row.user_id.substring(0, 8),
     totalPoints: row.total_points || 0,
-    coins: row.coins !== undefined && row.coins !== null ? row.coins : 100
+    coins: row.coins !== undefined && row.coins !== null ? row.coins : 100,
+    oldPoints: row.total_points || 0
   }));
 
-  return entries.sort((a, b) => b.totalPoints - a.totalPoints);
+  if (lastMatch) {
+    baseEntries.forEach(entry => {
+      const pred = predictions.find(p => p.user_id === entry.userId && p.match_id === lastMatch.id);
+      if (pred) {
+        entry.oldPoints -= (pred.points_earned || 0);
+      }
+    });
+  }
+
+  const oldEntries = [...baseEntries].sort((a, b) => b.oldPoints - a.oldPoints);
+  const oldPosMap: Record<string, number> = {};
+  oldEntries.forEach((e, idx) => { oldPosMap[e.userId] = idx + 1; });
+
+  const currentEntries = [...baseEntries].sort((a, b) => b.totalPoints - a.totalPoints);
+  
+  const entries: LeaderboardEntry[] = currentEntries.map((e, idx) => {
+    const currentPos = idx + 1;
+    const oldPos = oldPosMap[e.userId] || currentPos;
+    
+    let trend: 'UP' | 'DOWN' | 'SAME' = 'SAME';
+    if (currentPos < oldPos) trend = 'UP';
+    if (currentPos > oldPos) trend = 'DOWN';
+
+    const recentForm: ('EXACT' | 'WIN' | 'LOSS')[] = [];
+    last3Matches.forEach(m => {
+      const pred = predictions.find(p => p.user_id === e.userId && p.match_id === m.id);
+      if (!pred) {
+        recentForm.push('LOSS');
+      } else {
+        const pts = pred.points_earned || 0;
+        if (pts >= 5) recentForm.push('EXACT');
+        else if (pts >= 3) recentForm.push('WIN');
+        else recentForm.push('LOSS');
+      }
+    });
+
+    return {
+      userId: e.userId,
+      username: e.username,
+      totalPoints: e.totalPoints,
+      coins: e.coins,
+      trend,
+      recentForm
+    };
+  });
+
+  return entries;
 };
