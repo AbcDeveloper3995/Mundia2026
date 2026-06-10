@@ -26,7 +26,7 @@ export const AdminProgressWidget = ({ stats }: Props) => {
 
       <Grid container spacing={4}>
         {/* KPI Summary */}
-        <Grid item xs={12} md={6} lg={3}>
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
           <Paper sx={{ p: 4, borderRadius: 4, bgcolor: 'rgba(211, 47, 47, 0.05)', border: '1px solid rgba(211, 47, 47, 0.3)', height: '100%' }}>
             <Typography variant="h6" color="text.secondary" gutterBottom>
               Progreso General
@@ -52,7 +52,7 @@ export const AdminProgressWidget = ({ stats }: Props) => {
         </Grid>
 
         {/* Faltantes */}
-        <Grid item xs={12} md={6} lg={3}>
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
           <Paper sx={{ p: 4, borderRadius: 4, bgcolor: 'rgba(30,30,30,0.6)', border: '1px solid rgba(255, 152, 0, 0.3)', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Typography variant="h6" sx={{ color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
               <WarningAmberIcon /> Faltan por Completar ({pendingUsers.length})
@@ -76,7 +76,7 @@ export const AdminProgressWidget = ({ stats }: Props) => {
         </Grid>
 
         {/* Completados */}
-        <Grid item xs={12} md={6} lg={3}>
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
           <Paper sx={{ p: 4, borderRadius: 4, bgcolor: 'rgba(30,30,30,0.6)', border: '1px solid rgba(76, 175, 80, 0.3)', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Typography variant="h6" sx={{ color: 'success.main', display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
               <CheckCircleIcon /> Ya Completaron ({completedUsers.length})
@@ -97,7 +97,7 @@ export const AdminProgressWidget = ({ stats }: Props) => {
         </Grid>
 
         {/* Total Usuarios Registrados */}
-        <Grid item xs={12} md={6} lg={3}>
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
           <Paper sx={{ p: 4, borderRadius: 4, bgcolor: 'rgba(30,30,30,0.6)', border: '1px solid rgba(33, 150, 243, 0.3)', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Typography variant="h6" sx={{ color: 'info.main', display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
               <PersonIcon /> Registrados ({totalSystemUsers})
