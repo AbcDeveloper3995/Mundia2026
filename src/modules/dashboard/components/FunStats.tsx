@@ -6,13 +6,13 @@ const trophyConfig = {
   nostradamus: { title: '🔮 El Tiza', desc: 'Más marcadores exactos', color: '#9c27b0' },
   suertudo: { title: '🎲 El Tanke', desc: 'Más resultados acertados', color: '#ff9800' },
   mufa: { title: '💀 El Merma', desc: 'Peor porcentaje de aciertos', color: '#f44336' },
-  casiCasi: { title: '😭 Casi Casi', desc: 'A un gol de acertar exacto', color: '#ffeb3b' },
-  francotirador: { title: '🎯 Durakito', desc: 'Mejor porcentaje de exactos', color: '#00e676' },
-  reyEliminatorias: { title: '👑 Anda Pro', desc: 'Más puntos en cruces', color: '#ffd700' },
+  casiCasi: { title: '😭 El Casi casi', desc: 'A un gol de acertar exacto', color: '#ffeb3b' },
+  reyEliminatorias: { title: '👑 El Durakito', desc: 'Más puntos en cruces', color: '#ffd700' },
   visionario: { title: '🧠 Visionario', desc: 'Acertó MVP/Campeón', color: '#2196f3' },
-  premiumRecharge: { title: '💰 Recarga Premium', desc: 'Más +50 MessiCoins', color: '#ffb300' },
-  menudito: { title: '🪙 Menudito', desc: 'Más +20 MessiCoins', color: '#00e676' },
-  loss: { title: '💸 Pérdida', desc: 'Más -10 MessiCoins', color: '#ef5350' },
+  premiumRecharge: { title: '💰 Con más búsqueda', desc: 'Más +50 MessiCoins', color: '#ffb300' },
+  menudito: { title: '🪙 Con un menudito', desc: 'Más +20 MessiCoins', color: '#00e676' },
+  loss: { title: '💸 Con más pérdida', desc: 'Más -10 MessiCoins', color: '#ef5350' },
+  elVeneno: { title: '🥶 El Veneno', desc: 'Peor racha sin puntos', color: '#00e5ff' },
 };
 
 interface FunStatsProps {
@@ -25,12 +25,12 @@ export const FunStats = ({ stats }: FunStatsProps) => {
     { key: 'suertudo', data: stats.suertudo, value: stats.suertudo ? `${stats.suertudo.count} aciertos` : 'Nadie aún' },
     { key: 'mufa', data: stats.mufa, value: stats.mufa ? `${stats.mufa.percentage}% efectividad` : 'Nadie aún' },
     { key: 'casiCasi', data: stats.casiCasi, value: stats.casiCasi ? `${stats.casiCasi.count} veces` : 'Nadie aún' },
-    { key: 'francotirador', data: stats.francotirador, value: stats.francotirador ? `${stats.francotirador.percentage}% exactos` : 'Nadie aún' },
     { key: 'reyEliminatorias', data: stats.reyEliminatorias, value: stats.reyEliminatorias ? `${stats.reyEliminatorias.points} pts` : 'Nadie aún' },
     { key: 'visionario', data: stats.visionario, value: stats.visionario ? `${stats.visionario.points} pts extra` : 'Nadie aún' },
     { key: 'premiumRecharge', data: stats.premiumRecharge, value: stats.premiumRecharge ? `${stats.premiumRecharge.count} veces` : 'Nadie aún' },
     { key: 'menudito', data: stats.menudito, value: stats.menudito ? `${stats.menudito.count} veces` : 'Nadie aún' },
     { key: 'loss', data: stats.loss, value: stats.loss ? `${stats.loss.count} veces` : 'Nadie aún' },
+    { key: 'elVeneno', data: stats.elVeneno, value: stats.elVeneno ? `${stats.elVeneno.count} partidos` : 'Nadie aún' },
   ];
 
   return (

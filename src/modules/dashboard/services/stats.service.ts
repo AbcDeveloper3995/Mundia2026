@@ -40,6 +40,7 @@ export interface DashboardStats {
   premiumRecharge: { username: string; count: number } | null;
   menudito: { username: string; count: number } | null;
   loss: { username: string; count: number } | null;
+  elVeneno: { username: string; count: number } | null;
 
   // Rivalry
   rivalry: {
@@ -126,59 +127,75 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   // --- FUN STATS (Premios) ---
 
   // Agrupar predicciones terminadas por usuario para facilitar cálculos
-  const userStats: Record<string, { total: number; exact: number; correct: number; partial: number; loss: number; casiCasi: number; eliminatoriasPoints: number }> = {};
+  const userStats: Record<string, { total: number; exact: number; correct: number; partial: number; loss: number; casiCasi: number; eliminatoriasPoints: number; currentStreak: number }> = {};
   
   leaderboard.forEach(entry => {
-    userStats[entry.userId] = { total: 0, exact: 0, correct: 0, partial: 0, loss: 0, casiCasi: 0, eliminatoriasPoints: 0 };
+    userStats[entry.userId] = { total: 0, exact: 0, correct: 0, partial: 0, loss: 0, casiCasi: 0, eliminatoriasPoints: 0, currentStreak: 0 };
   });
 
-  predictions.forEach(p => {
-    const match = matches.find(m => m.id === p.match_id);
-    if (!match || !match.is_finished || !userStats[p.user_id]) return;
+  const sortedFinishedMatches = matches
+    .filter(m => m.is_finished)
+    .sort((a, b) => {
+      if (a.match_date && b.match_date) {
+        return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
+      }
+      return a.id.localeCompare(b.id);
+    });
 
-    userStats[p.user_id].total++;
+  sortedFinishedMatches.forEach(match => {
+    const matchPreds = predictions.filter(p => p.match_id === match.id);
     
-    if (match.home_score !== null && match.away_score !== null) {
-      const homeDiff = Math.abs(p.predicted_home_score - match.home_score);
-      const awayDiff = Math.abs(p.predicted_away_score - match.away_score);
-      const isExact = homeDiff === 0 && awayDiff === 0;
+    matchPreds.forEach(p => {
+      if (!userStats[p.user_id]) return;
+
+      userStats[p.user_id].total++;
       
-      const actualWinner = match.home_score > match.away_score ? 'HOME' : match.home_score < match.away_score ? 'AWAY' : 'DRAW';
-      const predWinner = p.predicted_home_score > p.predicted_away_score ? 'HOME' : p.predicted_home_score < p.predicted_away_score ? 'AWAY' : 'DRAW';
-      const isCorrect = actualWinner === predWinner;
-
-      if (isExact) {
-        userStats[p.user_id].exact++;
-      } else if (isCorrect) {
-        userStats[p.user_id].partial++;
-      } else {
-        userStats[p.user_id].loss++;
-      }
-
-      if (isCorrect) userStats[p.user_id].correct++;
-
-      // Casi Casi (diferencia de 1 gol exacto)
-      if (!isExact) {
-        if ((homeDiff === 1 && awayDiff === 0) || (homeDiff === 0 && awayDiff === 1)) {
-          userStats[p.user_id].casiCasi++;
-        }
-      }
-    }
-
-    if (match.stage !== 'GROUP') {
-      // Proxy simple para puntos en eliminatorias en caso de que points_earned no esté actualizado
       if (match.home_score !== null && match.away_score !== null) {
+        const homeDiff = Math.abs(p.predicted_home_score - match.home_score);
+        const awayDiff = Math.abs(p.predicted_away_score - match.away_score);
+        const isExact = homeDiff === 0 && awayDiff === 0;
+        
         const actualWinner = match.home_score > match.away_score ? 'HOME' : match.home_score < match.away_score ? 'AWAY' : 'DRAW';
         const predWinner = p.predicted_home_score > p.predicted_away_score ? 'HOME' : p.predicted_home_score < p.predicted_away_score ? 'AWAY' : 'DRAW';
-        if (actualWinner === predWinner) {
-           userStats[p.user_id].eliminatoriasPoints += 3;
+        const isCorrect = actualWinner === predWinner;
+
+        if (isExact) {
+          userStats[p.user_id].exact++;
+        } else if (isCorrect) {
+          userStats[p.user_id].partial++;
+        } else {
+          userStats[p.user_id].loss++;
         }
-        if (match.home_score === p.predicted_home_score && match.away_score === p.predicted_away_score) {
-           userStats[p.user_id].eliminatoriasPoints += 2; // Extra 2 pts for exact
+
+        if (isCorrect) {
+          userStats[p.user_id].correct++;
+          userStats[p.user_id].currentStreak = 0; // Rompe la mala racha
+        } else {
+          userStats[p.user_id].currentStreak++; // Aumenta la mala racha
+        }
+
+        // Casi Casi (diferencia de 1 gol exacto)
+        if (!isExact) {
+          if ((homeDiff === 1 && awayDiff === 0) || (homeDiff === 0 && awayDiff === 1)) {
+            userStats[p.user_id].casiCasi++;
+          }
         }
       }
-      // userStats[p.user_id].eliminatoriasPoints += (p.points_earned || 0);
-    }
+
+      if (match.stage !== 'GROUP') {
+        // Proxy simple para puntos en eliminatorias
+        if (match.home_score !== null && match.away_score !== null) {
+          const actualWinner = match.home_score > match.away_score ? 'HOME' : match.home_score < match.away_score ? 'AWAY' : 'DRAW';
+          const predWinner = p.predicted_home_score > p.predicted_away_score ? 'HOME' : p.predicted_home_score < p.predicted_away_score ? 'AWAY' : 'DRAW';
+          if (actualWinner === predWinner) {
+             userStats[p.user_id].eliminatoriasPoints += 3;
+          }
+          if (match.home_score === p.predicted_home_score && match.away_score === p.predicted_away_score) {
+             userStats[p.user_id].eliminatoriasPoints += 2; // Extra 2 pts for exact
+          }
+        }
+      }
+    });
   });
 
   // Calculate winners for each category
@@ -240,6 +257,9 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
 
   const lossRaw = findWinner(uid => userStats[uid].loss);
   const loss = lossRaw && lossRaw.score > 0 ? { username: lossRaw.username, count: lossRaw.score } : null;
+
+  const elVenenoRaw = findWinner(uid => userStats[uid].currentStreak);
+  const elVeneno = elVenenoRaw && elVenenoRaw.score > 0 ? { username: elVenenoRaw.username, count: elVenenoRaw.score } : null;
 
   // Visionario (premios especiales)
   let visionario = null;
@@ -517,6 +537,7 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     premiumRecharge,
     menudito,
     loss,
+    elVeneno,
     rivalry,
     podium,
     hardestMatch,
