@@ -425,7 +425,7 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     const userAwards = awards.find(a => a.user_id === user.userId);
     
     const hasAllMatches = userPredsCount === totalMatchesCount;
-    const hasAllAwards = !!userAwards && !!userAwards.mvp && !!userAwards.top_scorer && !!userAwards.top_assist && !!userAwards.champion_team_id;
+    const hasAllAwards = !!userAwards && !!userAwards.mvp && !!userAwards.top_scorer && !!userAwards.top_assist;
 
     if (hasAllMatches && hasAllAwards) {
       adminProgress.completedCount++;
