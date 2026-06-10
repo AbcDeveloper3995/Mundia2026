@@ -24,8 +24,9 @@ export interface DashboardStats {
   exactMatches: number;
   correctWinners: number;
   topChampions: { teamName: string; flag: string | null; count: number }[];
-  topMvp: { name: string; count: number } | null;
-  topScorer: { name: string; count: number } | null;
+  mvpVotes: { name: string; count: number }[];
+  scorerVotes: { name: string; count: number }[];
+  assistVotes: { name: string; count: number }[];
 
   // Fun Stats
   nostradamus: { username: string; count: number } | null;
@@ -387,6 +388,7 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   const championCounts: Record<string, number> = {};
   const mvpCounts: Record<string, number> = {};
   const scorerCounts: Record<string, number> = {};
+  const assistCounts: Record<string, number> = {};
 
   if (finalMatch) {
     predictions.filter(p => p.match_id === finalMatch.id).forEach(p => {
@@ -414,6 +416,9 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     if (a.top_scorer) {
       scorerCounts[a.top_scorer] = (scorerCounts[a.top_scorer] || 0) + 1;
     }
+    if (a.top_assist) {
+      assistCounts[a.top_assist] = (assistCounts[a.top_assist] || 0) + 1;
+    }
   });
 
   const topChampions = Object.entries(championCounts)
@@ -424,13 +429,15 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
       return { teamName: t?.name || 'Desconocido', flag: t?.flag || null, count };
     });
 
-  const getTopPlayer = (counts: Record<string, number>) => {
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    return sorted.length > 0 ? { name: sorted[0][0], count: sorted[0][1] } : null;
+  const getAllVotedPlayers = (counts: Record<string, number>) => {
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ name, count }));
   };
 
-  const topMvp = getTopPlayer(mvpCounts);
-  const topScorer = getTopPlayer(scorerCounts);
+  const mvpVotes = getAllVotedPlayers(mvpCounts);
+  const scorerVotes = getAllVotedPlayers(scorerCounts);
+  const assistVotes = getAllVotedPlayers(assistCounts);
 
   // --- ADMIN PROGRESS ---
   const totalMatchesCount = matches.length;
@@ -475,8 +482,9 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     exactMatches,
     correctWinners,
     topChampions,
-    topMvp,
-    topScorer,
+    mvpVotes,
+    scorerVotes,
+    assistVotes,
     nostradamus,
     suertudo,
     mufa,
