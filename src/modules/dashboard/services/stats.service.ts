@@ -435,21 +435,25 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     completedUsers: [] as string[]
   };
 
-  leaderboard.forEach(user => {
-    const userPredsCount = predictions.filter(p => p.user_id === user.userId).length;
-    const userAwards = awards.find(a => a.user_id === user.userId);
+  const profiles = profilesData || [];
+  profiles.forEach(profile => {
+    const userId = profile.id;
+    const username = profile.username || 'Desconocido';
+
+    const userPredsCount = predictions.filter(p => p.user_id === userId).length;
+    const userAwards = awards.find(a => a.user_id === userId);
     
     const hasAllMatches = userPredsCount === totalMatchesCount;
     const hasAllAwards = !!userAwards && !!userAwards.mvp && !!userAwards.top_scorer && !!userAwards.top_assist;
 
     if (hasAllMatches && hasAllAwards) {
       adminProgress.completedCount++;
-      adminProgress.completedUsers.push(user.username);
+      adminProgress.completedUsers.push(username);
     } else {
       let missingParts = [];
       if (!hasAllMatches) missingParts.push(`${totalMatchesCount - userPredsCount} partidos`);
       if (!hasAllAwards) missingParts.push('premios');
-      adminProgress.pendingUsers.push({ username: user.username, missing: missingParts.join(' y ') });
+      adminProgress.pendingUsers.push({ username: username, missing: missingParts.join(' y ') });
     }
   });
 
