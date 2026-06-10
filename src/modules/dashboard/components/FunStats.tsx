@@ -10,6 +10,9 @@ const trophyConfig = {
   francotirador: { title: '🎯 Durakito', desc: 'Mejor porcentaje de exactos', color: '#00e676' },
   reyEliminatorias: { title: '👑 Anda Pro', desc: 'Más puntos en cruces', color: '#ffd700' },
   visionario: { title: '🧠 Visionario', desc: 'Acertó MVP/Campeón', color: '#2196f3' },
+  premiumRecharge: { title: '💰 Recarga Premium', desc: 'Más +50 MessiCoins', color: '#ffb300' },
+  menudito: { title: '🪙 Menudito', desc: 'Más +20 MessiCoins', color: '#00e676' },
+  loss: { title: '💸 Pérdida', desc: 'Más -10 MessiCoins', color: '#ef5350' },
 };
 
 interface FunStatsProps {
@@ -25,12 +28,15 @@ export const FunStats = ({ stats }: FunStatsProps) => {
     { key: 'francotirador', data: stats.francotirador, value: stats.francotirador ? `${stats.francotirador.percentage}% exactos` : 'Nadie aún' },
     { key: 'reyEliminatorias', data: stats.reyEliminatorias, value: stats.reyEliminatorias ? `${stats.reyEliminatorias.points} pts` : 'Nadie aún' },
     { key: 'visionario', data: stats.visionario, value: stats.visionario ? `${stats.visionario.points} pts extra` : 'Nadie aún' },
+    { key: 'premiumRecharge', data: stats.premiumRecharge, value: stats.premiumRecharge ? `${stats.premiumRecharge.count} veces` : 'Nadie aún' },
+    { key: 'menudito', data: stats.menudito, value: stats.menudito ? `${stats.menudito.count} veces` : 'Nadie aún' },
+    { key: 'loss', data: stats.loss, value: stats.loss ? `${stats.loss.count} veces` : 'Nadie aún' },
   ];
 
   return (
     <Box sx={{ mb: 4 }}>
       <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 800, mb: 3 }}>
-        Salón de la Fama (y la Infamia)
+        Salón de la Fama
       </Typography>
       <Grid container spacing={2}>
         {cards.map((card, idx) => {

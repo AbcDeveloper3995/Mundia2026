@@ -212,12 +212,14 @@ export const DashboardPage = () => {
             {/* 2. Estadísticas Divertidas (Salón de la fama) */}
             <FunStats stats={stats} />
 
-            {/* 3. Comparaciones y Widgets */}
-            <Grid container spacing={4}>
-              <Grid size={{ xs: 12, lg: 12 }}  >
-                <GlobalWidgets stats={stats} />
+            {/* 3. Comparaciones y Widgets (Solo Admins) */}
+            {role === 'ADMIN' && (
+              <Grid container spacing={4}>
+                <Grid size={{ xs: 12, lg: 12 }}  >
+                  <GlobalWidgets stats={stats} />
+                </Grid>
               </Grid>
-            </Grid>
+            )}
           </Box>
         ) : null}
 

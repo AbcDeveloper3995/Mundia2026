@@ -37,6 +37,9 @@ export interface DashboardStats {
   francotirador: { username: string; percentage: number } | null;
   reyEliminatorias: { username: string; points: number } | null;
   visionario: { username: string; points: number } | null;
+  premiumRecharge: { username: string; count: number } | null;
+  menudito: { username: string; count: number } | null;
+  loss: { username: string; count: number } | null;
 
   // Rivalry
   rivalry: {
@@ -123,10 +126,10 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   // --- FUN STATS (Premios) ---
 
   // Agrupar predicciones terminadas por usuario para facilitar cálculos
-  const userStats: Record<string, { total: number; exact: number; correct: number; casiCasi: number; eliminatoriasPoints: number }> = {};
+  const userStats: Record<string, { total: number; exact: number; correct: number; partial: number; loss: number; casiCasi: number; eliminatoriasPoints: number }> = {};
   
   leaderboard.forEach(entry => {
-    userStats[entry.userId] = { total: 0, exact: 0, correct: 0, casiCasi: 0, eliminatoriasPoints: 0 };
+    userStats[entry.userId] = { total: 0, exact: 0, correct: 0, partial: 0, loss: 0, casiCasi: 0, eliminatoriasPoints: 0 };
   });
 
   predictions.forEach(p => {
@@ -144,7 +147,14 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
       const predWinner = p.predicted_home_score > p.predicted_away_score ? 'HOME' : p.predicted_home_score < p.predicted_away_score ? 'AWAY' : 'DRAW';
       const isCorrect = actualWinner === predWinner;
 
-      if (isExact) userStats[p.user_id].exact++;
+      if (isExact) {
+        userStats[p.user_id].exact++;
+      } else if (isCorrect) {
+        userStats[p.user_id].partial++;
+      } else {
+        userStats[p.user_id].loss++;
+      }
+
       if (isCorrect) userStats[p.user_id].correct++;
 
       // Casi Casi (diferencia de 1 gol exacto)
@@ -221,6 +231,15 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
 
   const reyEliminatoriasRaw = findWinner(uid => userStats[uid].eliminatoriasPoints);
   const reyEliminatorias = reyEliminatoriasRaw && reyEliminatoriasRaw.score > 0 ? { username: reyEliminatoriasRaw.username, points: reyEliminatoriasRaw.score } : null;
+
+  const premiumRechargeRaw = findWinner(uid => userStats[uid].exact);
+  const premiumRecharge = premiumRechargeRaw && premiumRechargeRaw.score > 0 ? { username: premiumRechargeRaw.username, count: premiumRechargeRaw.score } : null;
+
+  const menuditoRaw = findWinner(uid => userStats[uid].partial);
+  const menudito = menuditoRaw && menuditoRaw.score > 0 ? { username: menuditoRaw.username, count: menuditoRaw.score } : null;
+
+  const lossRaw = findWinner(uid => userStats[uid].loss);
+  const loss = lossRaw && lossRaw.score > 0 ? { username: lossRaw.username, count: lossRaw.score } : null;
 
   // Visionario (premios especiales)
   let visionario = null;
@@ -495,6 +514,9 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     francotirador,
     reyEliminatorias,
     visionario,
+    premiumRecharge,
+    menudito,
+    loss,
     rivalry,
     podium,
     hardestMatch,
