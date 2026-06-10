@@ -27,6 +27,7 @@ export const MatchesManager = () => {
   const [error, setError] = useState<string | null>(null);
   
   const [isBracketOpen, setIsBracketOpen] = useState(false);
+  const [isManualMode, setIsManualMode] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -167,6 +168,17 @@ export const MatchesManager = () => {
       }
     } catch (err: any) {
       setError("Error actualizando el estado: " + err.message);
+    }
+  };
+
+  const handleManualTeamChange = async (matchId: string, side: 'home_team_id' | 'away_team_id', newTeamId: string) => {
+    try {
+      setLoading(true);
+      await updateMatch(matchId, { [side]: newTeamId || null });
+      await loadInitialData();
+    } catch (err: any) {
+      setError("Error actualizando equipo: " + err.message);
+      setLoading(false);
     }
   };
 
@@ -428,7 +440,11 @@ export const MatchesManager = () => {
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h5" sx={{ fontWeight: 700, color: 'secondary.main' }}>Fase Eliminatoria</Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <FormControlLabel
+                control={<Switch checked={isManualMode} onChange={(e) => setIsManualMode(e.target.checked)} color="warning" />}
+                label={<Typography sx={{ fontWeight: 800, color: isManualMode ? 'warning.main' : 'text.secondary' }}>Modo Manual (Dieciseisavos)</Typography>}
+              />
               <Button variant="outlined" color="secondary" onClick={() => setIsBracketOpen(true)} sx={{ fontWeight: 800 }}>
                 Ver Árbol del Torneo
               </Button>
@@ -460,8 +476,23 @@ export const MatchesManager = () => {
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               {/* Home */}
                               <Box sx={{ width: '40%', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                {home?.flag ? <img src={home.flag} alt="" style={{width: 24}}/> : <Box sx={{width: 24, height: 16, bgcolor: '#333'}} />}
-                                <Typography variant="body2">{home ? home.name : 'TBD'}</Typography>
+                                {(isManualMode && stage === 'R32') ? (
+                                  <FormControl fullWidth size="small">
+                                    <Select 
+                                      value={match.home_team_id || ''} 
+                                      onChange={(e) => handleManualTeamChange(match.id, 'home_team_id', e.target.value as string)}
+                                      displayEmpty
+                                    >
+                                      <MenuItem value=""><em>TBD</em></MenuItem>
+                                      {allTeams.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                                    </Select>
+                                  </FormControl>
+                                ) : (
+                                  <>
+                                    {home?.flag ? <img src={home.flag} alt="" style={{width: 24}}/> : <Box sx={{width: 24, height: 16, bgcolor: '#333'}} />}
+                                    <Typography variant="body2">{home ? home.name : 'TBD'}</Typography>
+                                  </>
+                                )}
                               </Box>
                               
                               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -482,8 +513,23 @@ export const MatchesManager = () => {
 
                               {/* Away */}
                               <Box sx={{ width: '40%', display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
-                                <Typography variant="body2">{away ? away.name : 'TBD'}</Typography>
-                                {away?.flag ? <img src={away.flag} alt="" style={{width: 24}}/> : <Box sx={{width: 24, height: 16, bgcolor: '#333'}} />}
+                                {(isManualMode && stage === 'R32') ? (
+                                  <FormControl fullWidth size="small">
+                                    <Select 
+                                      value={match.away_team_id || ''} 
+                                      onChange={(e) => handleManualTeamChange(match.id, 'away_team_id', e.target.value as string)}
+                                      displayEmpty
+                                    >
+                                      <MenuItem value=""><em>TBD</em></MenuItem>
+                                      {allTeams.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                                    </Select>
+                                  </FormControl>
+                                ) : (
+                                  <>
+                                    <Typography variant="body2">{away ? away.name : 'TBD'}</Typography>
+                                    {away?.flag ? <img src={away.flag} alt="" style={{width: 24}}/> : <Box sx={{width: 24, height: 16, bgcolor: '#333'}} />}
+                                  </>
+                                )}
                               </Box>
                             </Box>
                           </Paper>
