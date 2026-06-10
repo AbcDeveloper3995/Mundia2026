@@ -10,6 +10,7 @@ import { FavoritesKPIs } from '../components/FavoritesKPIs';
 import { GlobalWidgets } from '../components/GlobalWidgets';
 import { PodiumWidget } from '../components/PodiumWidget';
 import { RulesModal } from '../components/RulesModal';
+import { AdminProgressWidget } from '../components/AdminProgressWidget';
 import GavelIcon from '@mui/icons-material/Gavel';
 
 export const DashboardPage = () => {
@@ -191,6 +192,9 @@ export const DashboardPage = () => {
                 </Grid>
               </Grid>
             </Box>
+
+            {/* Admin Progress (Only visible for Admins) */}
+            {role === 'ADMIN' && <AdminProgressWidget stats={stats} />}
 
             {/* 1. KPIs Principales */}
             <MainKPIs stats={stats} myUsername={user?.user_metadata?.username} />

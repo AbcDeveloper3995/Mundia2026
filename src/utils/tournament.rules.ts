@@ -29,8 +29,10 @@ export const calculateGroupStandings = (teams: Team[], matches: Match[]): TeamSt
     };
   });
 
-  // Process matches
-  matches.filter(m => m.is_finished && m.home_score !== null && m.away_score !== null).forEach(m => {
+  const validMatches = matches.filter(m => m.is_finished && m.home_score !== null && m.away_score !== null);
+
+  // Process global matches
+  validMatches.forEach(m => {
     const home = standingsMap[m.home_team_id!];
     const away = standingsMap[m.away_team_id!];
     
@@ -63,13 +65,73 @@ export const calculateGroupStandings = (teams: Team[], matches: Match[]): TeamSt
     }
   });
 
-  // Sort standings
-  return Object.values(standingsMap).sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
-    return a.name.localeCompare(b.name);
+  const globalStandings = Object.values(standingsMap);
+
+  // Helper to calculate mini-league stats for tied teams
+  const getMiniLeagueStats = (tiedTeamIds: string[]) => {
+    const miniStandings: Record<string, { points: number, gd: number, gf: number }> = {};
+    tiedTeamIds.forEach(id => { miniStandings[id] = { points: 0, gd: 0, gf: 0 }; });
+
+    validMatches.forEach(m => {
+      if (tiedTeamIds.includes(m.home_team_id!) && tiedTeamIds.includes(m.away_team_id!)) {
+        const home = miniStandings[m.home_team_id!];
+        const away = miniStandings[m.away_team_id!];
+        
+        home.gf += m.home_score!;
+        home.gd += (m.home_score! - m.away_score!);
+        away.gf += m.away_score!;
+        away.gd += (m.away_score! - m.home_score!);
+        
+        if (m.home_score! > m.away_score!) { home.points += 3; }
+        else if (m.home_score! < m.away_score!) { away.points += 3; }
+        else { home.points += 1; away.points += 1; }
+      }
+    });
+    return miniStandings;
+  };
+
+  // Group teams by global points
+  const pointGroups: Record<number, TeamStanding[]> = {};
+  globalStandings.forEach(team => {
+    if (!pointGroups[team.points]) pointGroups[team.points] = [];
+    pointGroups[team.points].push(team);
   });
+
+  const sortedStandings: TeamStanding[] = [];
+  const sortedPoints = Object.keys(pointGroups).map(Number).sort((a, b) => b - a);
+
+  sortedPoints.forEach(pts => {
+    const tiedTeams = pointGroups[pts];
+    
+    if (tiedTeams.length === 1) {
+      sortedStandings.push(tiedTeams[0]);
+    } else {
+      // Create a mini-league for the tied teams (H2H step)
+      const tiedIds = tiedTeams.map(t => t.team_id);
+      const miniStats = getMiniLeagueStats(tiedIds);
+
+      tiedTeams.sort((a, b) => {
+        const aMini = miniStats[a.team_id];
+        const bMini = miniStats[b.team_id];
+
+        // Primer paso: Criterios Head-to-Head (H2H)
+        if (bMini.points !== aMini.points) return bMini.points - aMini.points;
+        if (bMini.gd !== aMini.gd) return bMini.gd - aMini.gd;
+        if (bMini.gf !== aMini.gf) return bMini.gf - aMini.gf;
+
+        // Segundo paso: Criterios Globales
+        if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+        if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+
+        // Fallback alfabético (ignora Fair Play - Opción A)
+        return a.name.localeCompare(b.name);
+      });
+
+      sortedStandings.push(...tiedTeams);
+    }
+  });
+
+  return sortedStandings;
 };
 
 export const getWinner = (match: Match): string | null => {

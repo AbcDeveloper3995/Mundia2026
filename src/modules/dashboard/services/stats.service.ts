@@ -43,20 +43,33 @@ export interface DashboardStats {
   podium: LeaderboardEntry[];
   hardestMatch: MatchStatsInfo | null;
   easiestMatch: MatchStatsInfo | null;
+
+  // Admin Info
+  adminProgress?: {
+    totalSystemUsers: number;
+    systemUsernames: string[];
+    totalParticipants: number;
+    completedCount: number;
+    pendingUsers: { username: string; missing: string }[];
+    completedUsers: string[];
+  };
 }
 
 export const fetchDashboardStats = async (userId: string): Promise<DashboardStats> => {
   // 1. Fetch all required data in parallel
-  const [leaderboard, matches, teams, { data: predsData }, { data: awardsData }] = await Promise.all([
+  const [leaderboard, matches, teams, { data: predsData }, { data: awardsData }, { data: profilesData }] = await Promise.all([
     fetchLeaderboard(),
     fetchAllMatches(),
     fetchTeams(),
     supabase.from('predictions').select('*'),
-    supabase.from('prediction_awards').select('*')
+    supabase.from('prediction_awards').select('*'),
+    supabase.from('profiles').select('id, username')
   ]);
 
   const predictions = (predsData || []) as Prediction[];
   const awards = (awardsData || []) as PredictionAwards[];
+  const systemUsers = (profilesData || []).map(p => p.username || 'Desconocido');
+  const totalSystemUsers = systemUsers.length;
 
   // --- MAIN KPIs ---
   const myIndex = leaderboard.findIndex(entry => entry.userId === userId);
@@ -396,6 +409,35 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   const topMvp = getTopPlayer(mvpCounts);
   const topScorer = getTopPlayer(scorerCounts);
 
+  // --- ADMIN PROGRESS ---
+  const totalMatchesCount = matches.length;
+  const adminProgress = {
+    totalSystemUsers,
+    systemUsernames: systemUsers,
+    totalParticipants: leaderboard.length,
+    completedCount: 0,
+    pendingUsers: [] as { username: string; missing: string }[],
+    completedUsers: [] as string[]
+  };
+
+  leaderboard.forEach(user => {
+    const userPredsCount = predictions.filter(p => p.user_id === user.userId).length;
+    const userAwards = awards.find(a => a.user_id === user.userId);
+    
+    const hasAllMatches = userPredsCount === totalMatchesCount;
+    const hasAllAwards = !!userAwards && !!userAwards.mvp && !!userAwards.top_scorer && !!userAwards.top_assist && !!userAwards.champion_team_id;
+
+    if (hasAllMatches && hasAllAwards) {
+      adminProgress.completedCount++;
+      adminProgress.completedUsers.push(user.username);
+    } else {
+      let missingParts = [];
+      if (!hasAllMatches) missingParts.push(`${totalMatchesCount - userPredsCount} partidos`);
+      if (!hasAllAwards) missingParts.push('premios');
+      adminProgress.pendingUsers.push({ username: user.username, missing: missingParts.join(' y ') });
+    }
+  });
+
   return {
     position,
     totalParticipants: leaderboard.length,
@@ -418,6 +460,7 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     rival,
     podium,
     hardestMatch,
-    easiestMatch
+    easiestMatch,
+    adminProgress
   };
 };
