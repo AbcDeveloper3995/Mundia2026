@@ -170,24 +170,24 @@ export const generateBracket = (groups: Group[], allMatches: Match[]) => {
   };
 
   // Lado Izquierdo (Partidos 1 al 8)
-  leftBracket.push(pair(W['A'], getThirdForWinner('A'))); // M1: 1A vs 3er (según tabla)
-  leftBracket.push(pair(R['B'], R['F']));                 // M2: 2B vs 2F
-  leftBracket.push(pair(W['C'], getThirdForWinner('C'))); // M3: 1C vs 3er
-  leftBracket.push(pair(R['D'], R['H']));                 // M4: 2D vs 2H
-  leftBracket.push(pair(W['E'], getThirdForWinner('E'))); // M5: 1E vs 3er
-  leftBracket.push(pair(W['G'], R['I']));                 // M6: 1G vs 2I
-  leftBracket.push(pair(W['I'], getThirdForWinner('I'))); // M7: 1I vs 3er
-  leftBracket.push(pair(W['K'], R['L']));                 // M8: 1K vs 2L
+  leftBracket.push(pair(W['E'], getThirdForWinner('E'))); // M1: 1E vs 3 (A/B/C/D/F)
+  leftBracket.push(pair(W['I'], getThirdForWinner('I'))); // M2: 1I vs 3 (C/D/F/G/H)
+  leftBracket.push(pair(R['A'], R['B']));                 // M3: 2A vs 2B
+  leftBracket.push(pair(W['F'], R['C']));                 // M4: 1F vs 2C
+  leftBracket.push(pair(R['K'], R['L']));                 // M5: 2K vs 2L
+  leftBracket.push(pair(W['H'], R['J']));                 // M6: 1H vs 2J
+  leftBracket.push(pair(W['D'], getThirdForWinner('D'))); // M7: 1D vs 3 (B/E/F/I/J)
+  leftBracket.push(pair(W['G'], getThirdForWinner('G'))); // M8: 1G vs 3 (A/E/H/I/J)
 
   // Lado Derecho (Partidos 9 al 16)
-  rightBracket.push(pair(W['B'], getThirdForWinner('B'))); // M9: 1B vs 3er
-  rightBracket.push(pair(R['A'], R['E']));                 // M10: 2A vs 2E
-  rightBracket.push(pair(W['D'], getThirdForWinner('D'))); // M11: 1D vs 3er
-  rightBracket.push(pair(R['C'], R['G']));                 // M12: 2C vs 2G
-  rightBracket.push(pair(W['F'], getThirdForWinner('F'))); // M13: 1F vs 3er
-  rightBracket.push(pair(W['H'], R['J']));                 // M14: 1H vs 2J
-  rightBracket.push(pair(W['J'], getThirdForWinner('J'))); // M15: 1J vs 3er
-  rightBracket.push(pair(W['L'], R['K']));                 // M16: 1L vs 2K
+  rightBracket.push(pair(W['C'], R['F']));                 // M9: 1C vs 2F
+  rightBracket.push(pair(R['E'], R['I']));                 // M10: 2E vs 2I
+  rightBracket.push(pair(W['A'], getThirdForWinner('A'))); // M11: 1A vs 3 (C/E/F/H/I)
+  rightBracket.push(pair(W['L'], getThirdForWinner('L'))); // M12: 1L vs 3 (E/H/I/J/K)
+  rightBracket.push(pair(W['J'], R['H']));                 // M13: 1J vs 2H
+  rightBracket.push(pair(R['D'], R['G']));                 // M14: 2D vs 2G
+  rightBracket.push(pair(W['B'], getThirdForWinner('B'))); // M15: 1B vs 3 (E/F/G/I/J)
+  rightBracket.push(pair(W['K'], getThirdForWinner('K'))); // M16: 1K vs 3 (D/E/I/J/L)
 
   const matchups = [...leftBracket, ...rightBracket].filter(m => m.length === 2);
 
