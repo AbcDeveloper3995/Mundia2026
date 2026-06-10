@@ -22,6 +22,7 @@ export interface PredictionAwards {
   runner_up_team_id?: string | null;
   third_place_team_id?: string | null;
   total_points?: number;
+  coins?: number;
 }
 
 export const fetchUserPredictions = async (userId: string): Promise<Prediction[]> => {
@@ -183,9 +184,10 @@ export const recalculateAllLeaderboards = async () => {
     predictionsByUser[p.user_id].push(p as Prediction);
   });
 
-  // Calcular puntos
+  // Calcular puntos y monedas
   for (const userId of Object.keys(predictionsByUser)) {
     let totalPoints = 0;
+    let totalCoins = 100; // Saldo Inicial
     const userPreds = predictionsByUser[userId];
 
     for (const pred of userPreds) {
@@ -256,12 +258,17 @@ export const recalculateAllLeaderboards = async () => {
           // Resultado exacto: 5 puntos
           if (pred.predicted_home_score === realHomeScore && pred.predicted_away_score === realAwayScore) {
             matchPoints += 5;
+            totalCoins += 50;
           } else {
             // Ganador o empate correcto: 3 puntos
             const actualWinner = realHomeScore > realAwayScore ? 'HOME' : realHomeScore < realAwayScore ? 'AWAY' : 'DRAW';
             const predWinner = pred.predicted_home_score > pred.predicted_away_score ? 'HOME' : pred.predicted_home_score < pred.predicted_away_score ? 'AWAY' : 'DRAW';
             if (actualWinner === predWinner) {
               matchPoints += 3;
+              totalCoins += 20;
+            } else {
+              // Fallo absoluto: penalidad
+              totalCoins -= 10;
             }
           }
         }
@@ -274,9 +281,9 @@ export const recalculateAllLeaderboards = async () => {
     // REGLAS PREMIOS ESPECIALES
     const uAward = allAwards?.find(a => a.user_id === userId);
     if (officialAwards && uAward) {
-      if (officialAwards.top_scorer && officialAwards.top_scorer === uAward.top_scorer) totalPoints += 10;
-      if (officialAwards.top_assist && officialAwards.top_assist === uAward.top_assist) totalPoints += 10;
-      if (officialAwards.mvp && officialAwards.mvp === uAward.mvp) totalPoints += 10;
+      if (officialAwards.top_scorer && officialAwards.top_scorer === uAward.top_scorer) { totalPoints += 10; totalCoins += 100; }
+      if (officialAwards.top_assist && officialAwards.top_assist === uAward.top_assist) { totalPoints += 10; totalCoins += 100; }
+      if (officialAwards.mvp && officialAwards.mvp === uAward.mvp) { totalPoints += 10; totalCoins += 100; }
       
       // Campeón (+20) -> Validar la predicción FINAL
       const finalPred = userPreds.find(p => {
@@ -286,14 +293,14 @@ export const recalculateAllLeaderboards = async () => {
       if (finalPred && officialAwards.champion_team_id) {
         const predWinnerId = finalPred.predicted_home_score > finalPred.predicted_away_score ? finalPred.predicted_home_team_id :
                              finalPred.predicted_home_score < finalPred.predicted_away_score ? finalPred.predicted_away_team_id : null;
-        if (predWinnerId === officialAwards.champion_team_id) totalPoints += 20;
+        if (predWinnerId === officialAwards.champion_team_id) { totalPoints += 20; totalCoins += 200; }
       }
 
       // Subcampeón (+10) -> El perdedor de la FINAL
       if (finalPred && officialAwards.runner_up_team_id) {
         const predLoserId = finalPred.predicted_home_score < finalPred.predicted_away_score ? finalPred.predicted_home_team_id :
                             finalPred.predicted_home_score > finalPred.predicted_away_score ? finalPred.predicted_away_team_id : null;
-        if (predLoserId === officialAwards.runner_up_team_id) totalPoints += 10;
+        if (predLoserId === officialAwards.runner_up_team_id) { totalPoints += 10; totalCoins += 100; }
       }
 
       // Tercer Lugar (+5) -> Ganador del partido 3RD
@@ -304,15 +311,15 @@ export const recalculateAllLeaderboards = async () => {
       if (thirdPred && officialAwards.third_place_team_id) {
         const predThirdId = thirdPred.predicted_home_score > thirdPred.predicted_away_score ? thirdPred.predicted_home_team_id :
                             thirdPred.predicted_home_score < thirdPred.predicted_away_score ? thirdPred.predicted_away_team_id : null;
-        if (predThirdId === officialAwards.third_place_team_id) totalPoints += 5;
+        if (predThirdId === officialAwards.third_place_team_id) { totalPoints += 5; totalCoins += 50; }
       }
     }
 
     userPointsMap[userId] = totalPoints;
     if (uAward) {
-      awardsUpdates.push({ ...uAward, total_points: totalPoints });
+      awardsUpdates.push({ ...uAward, total_points: totalPoints, coins: totalCoins });
     } else {
-      awardsUpdates.push({ user_id: userId, total_points: totalPoints });
+      awardsUpdates.push({ user_id: userId, total_points: totalPoints, coins: totalCoins });
     }
   }
 
@@ -339,13 +346,14 @@ export interface LeaderboardEntry {
   userId: string;
   username: string;
   totalPoints: number;
+  coins: number;
 }
 
 export const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
   // Como no hay relación Foreign Key directa entre prediction_awards y profiles configurada en Supabase,
   // hacemos las dos peticiones y las unimos en memoria.
   const [awardsResponse, profilesResponse] = await Promise.all([
-    supabase.from('prediction_awards').select('user_id, total_points'),
+    supabase.from('prediction_awards').select('user_id, total_points, coins'),
     supabase.from('profiles').select('id, username')
   ]);
 
@@ -362,7 +370,8 @@ export const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
   const entries: LeaderboardEntry[] = (awardsResponse.data || []).map((row: any) => ({
     userId: row.user_id,
     username: profilesMap[row.user_id] || row.user_id.substring(0, 8),
-    totalPoints: row.total_points || 0
+    totalPoints: row.total_points || 0,
+    coins: row.coins !== undefined && row.coins !== null ? row.coins : 100
   }));
 
   return entries.sort((a, b) => b.totalPoints - a.totalPoints);

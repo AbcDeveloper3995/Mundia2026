@@ -12,6 +12,7 @@ import { PodiumWidget } from '../components/PodiumWidget';
 import { RulesModal } from '../components/RulesModal';
 import { AdminProgressWidget } from '../components/AdminProgressWidget';
 import GavelIcon from '@mui/icons-material/Gavel';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 
 export const DashboardPage = () => {
   const { user, role } = useAuthStore();
@@ -74,15 +75,21 @@ export const DashboardPage = () => {
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 6 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography variant="h2" component="h1" gutterBottom sx={{
-              fontWeight: 800
-            }}>
-              Bienvenido, {user?.user_metadata?.username}
-            </Typography>
-            <Typography variant="h2" component="h1" color="text.secondary" sx={{ fontWeight: 400 }}>
-              <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, ml: 1 }}>[{role || 'Participante'}]</Box>
-            </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 800, mb: 0 }}>
+                Bienvenido, {user?.user_metadata?.username}
+              </Typography>
+              <Typography variant="h2" component="h1" color="text.secondary" sx={{ fontWeight: 400, mb: 0 }}>
+                <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, ml: 1 }}>[{role || 'Participante'}]</Box>
+              </Typography>
+            </Box>
+            {stats && (
+              <Box sx={{ mt: 1.5, display: 'inline-flex', alignItems: 'center', bgcolor: 'rgba(255, 193, 7, 0.1)', border: '1px solid #ffc107', borderRadius: 2, px: 2, py: 0.5, gap: 1, width: 'fit-content' }}>
+                <Typography variant="body2" sx={{ color: '#ffc107', fontWeight: 900, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 0.5 }}><MonetizationOnIcon sx={{ fontSize: 18 }}/> Saldo en MessiCoins (MC):</Typography>
+                <Typography variant="h6" sx={{ color: '#ffc107', fontWeight: 900 }}>{stats.myCoins}</Typography>
+              </Box>
+            )}
           </Box>
           <Button
             variant="outlined"

@@ -18,6 +18,7 @@ export interface DashboardStats {
   position: number;
   totalParticipants: number;
   totalPoints: number;
+  myCoins: number;
   distanceToLeader: number | null;
   distanceToNext: number | null;
   precision: number; // percentage
@@ -80,8 +81,9 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   // --- MAIN KPIs ---
   const myIndex = leaderboard.findIndex(entry => entry.userId === userId);
   const position = myIndex !== -1 ? myIndex + 1 : 0;
-  const myEntry = myIndex !== -1 ? leaderboard[myIndex] : null;
+  const myEntry = leaderboard.find(l => l.userId === userId);
   const totalPoints = myEntry?.totalPoints || 0;
+  const myCoins = myEntry?.coins !== undefined ? myEntry.coins : 100;
 
   let distanceToLeader = null;
   let distanceToNext = null;
@@ -476,6 +478,7 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     position,
     totalParticipants: leaderboard.length,
     totalPoints,
+    myCoins,
     distanceToLeader,
     distanceToNext,
     precision,

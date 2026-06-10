@@ -3,6 +3,7 @@ import { Box, Typography, Paper, CircularProgress, Alert, Table, TableBody, Tabl
 import { fetchLeaderboard, type LeaderboardEntry } from '@/modules/predictions/services/predictions.service';
 import { useAuthStore } from '@/store/auth.store';
 import { motion } from 'framer-motion';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 
 export const LeaderboardPage = () => {
   const { user } = useAuthStore();
@@ -59,12 +60,17 @@ export const LeaderboardPage = () => {
                 <TableCell sx={{ fontWeight: 800, width: 100, textAlign: 'center', py: 3, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.85rem' }}>Pos</TableCell>
                 <TableCell sx={{ fontWeight: 800, py: 3, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.85rem' }}>Participante</TableCell>
                 <TableCell sx={{ fontWeight: 800, textAlign: 'right', py: 3, color: 'primary.main', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.85rem' }}>Puntos</TableCell>
+                <TableCell sx={{ fontWeight: 800, textAlign: 'right', py: 3, color: '#ffc107', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.85rem' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                    <MonetizationOnIcon sx={{ fontSize: 16 }} /> Saldo en MC
+                  </Box>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {leaderboard.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+                  <TableCell colSpan={4} sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
                     Aún no hay puntos registrados. ¡Empieza a predecir!
                   </TableCell>
                 </TableRow>
@@ -93,6 +99,11 @@ export const LeaderboardPage = () => {
                       </TableCell>
                       <TableCell sx={{ textAlign: 'right', fontWeight: 900, fontSize: '1.2rem', color: 'primary.main' }}>
                         {entry.totalPoints} <Typography component="span" sx={{ fontSize: '0.8rem', color: 'text.secondary', fontWeight: 600 }}>pts</Typography>
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'right', fontWeight: 900, fontSize: '1.2rem', color: '#ffc107' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                          {entry.coins} <MonetizationOnIcon sx={{ fontSize: 18 }} />
+                        </Box>
                       </TableCell>
                     </TableRow>
                   );
