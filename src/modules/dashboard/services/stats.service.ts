@@ -37,7 +37,11 @@ export interface DashboardStats {
   visionario: { username: string; points: number } | null;
 
   // Rivalry
-  rival: { username: string; points: number; distance: number; ahead: boolean } | null;
+  rivalry: {
+    leader: { username: string; points: number; distance: number } | null;
+    ahead: { username: string; points: number; distance: number } | null;
+    behind: { username: string; points: number; distance: number } | null;
+  } | null;
 
   // Global Widgets
   podium: LeaderboardEntry[];
@@ -263,17 +267,21 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   }
 
   // --- RIVALRY ---
-  let rival = null;
-  if (leaderboard.length > 1) {
-    if (myIndex > 0) {
-      // Rival is the one above
-      const r = leaderboard[myIndex - 1];
-      rival = { username: r.username, points: r.totalPoints, distance: r.totalPoints - totalPoints, ahead: true };
-    } else {
-      // I am leader, rival is #2
-      const r = leaderboard[1];
-      rival = { username: r.username, points: r.totalPoints, distance: totalPoints - r.totalPoints, ahead: false };
-    }
+  let rivalry = null;
+  const maxLeaderboardPoints = leaderboard.length > 0 ? Math.max(...leaderboard.map(l => l.totalPoints)) : 0;
+
+  // Solo hay rivalidad si hay más de 1 en el leaderboard, el usuario actual ESTÁ en el leaderboard (myIndex !== -1),
+  // y al menos alguien tiene puntos (> 0) para que tenga sentido competir.
+  if (leaderboard.length > 1 && myIndex !== -1 && maxLeaderboardPoints > 0) {
+    const leaderUser = leaderboard[0];
+    const aheadUser = myIndex > 0 ? leaderboard[myIndex - 1] : null;
+    const behindUser = myIndex < leaderboard.length - 1 ? leaderboard[myIndex + 1] : null;
+
+    rivalry = {
+      leader: myIndex === 0 ? null : { username: leaderUser.username, points: leaderUser.totalPoints, distance: Math.max(0, leaderUser.totalPoints - totalPoints) },
+      ahead: myIndex > 1 ? { username: aheadUser!.username, points: aheadUser!.totalPoints, distance: Math.max(0, aheadUser!.totalPoints - totalPoints) } : null,
+      behind: behindUser ? { username: behindUser.username, points: behindUser.totalPoints, distance: Math.max(0, totalPoints - behindUser.totalPoints) } : null
+    };
   }
 
   // --- GLOBAL WIDGETS ---
@@ -476,7 +484,7 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     francotirador,
     reyEliminatorias,
     visionario,
-    rival,
+    rivalry,
     podium,
     hardestMatch,
     easiestMatch,
