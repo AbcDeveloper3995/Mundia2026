@@ -18,7 +18,7 @@ export const FavoritesKPIs = ({ stats }: FavoritesKPIsProps) => {
           <motion.div whileHover={{ y: -5 }}>
             <Paper sx={{ p: 3, borderRadius: 4, bgcolor: 'rgba(20,20,20,0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0, 230, 118, 0.3)', position: 'relative', overflow: 'hidden', height: '100%' }}>
               <PublicIcon sx={{ position: 'absolute', right: -10, top: -10, fontSize: 100, color: 'rgba(0, 230, 118, 0.05)' }} />
-              <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'uppercase',  fontWeight: 800 }} >Favoritos al Título</Typography>
+              <Typography variant="body2" sx={{ color: '#00e676', textTransform: 'uppercase',  fontWeight: 800 }} >Favoritos al Título</Typography>
               <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {stats.topChampions && stats.topChampions.length > 0 ? stats.topChampions.map((c: any, i: number) => (
                   <Box key={i} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -41,15 +41,15 @@ export const FavoritesKPIs = ({ stats }: FavoritesKPIsProps) => {
           <motion.div whileHover={{ y: -5 }}>
             <Paper sx={{ p: 3, borderRadius: 4, bgcolor: 'rgba(20,20,20,0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 152, 0, 0.3)', position: 'relative', overflow: 'hidden', height: '100%' }}>
               <StarIcon sx={{ position: 'absolute', right: -10, top: -10, fontSize: 100, color: 'rgba(255, 152, 0, 0.05)' }} />
-              <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'uppercase',  fontWeight: 800 }} >Jugadores Más Votados</Typography>
+              <Typography variant="body2" sx={{ color: '#ff9800', textTransform: 'uppercase',  fontWeight: 800 }} >Jugadores Más Votados</Typography>
               
               <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box>
-                  <Typography variant="caption" color="text.secondary"  sx={{ textTransform: 'uppercase',  fontWeight: 800 }}>MVP del Mundial</Typography>
+                  <Typography variant="caption" sx={{ color: '#ff9800', textTransform: 'uppercase',  fontWeight: 800 }}>MVP del Mundial</Typography>
                   {stats.mvpVotes && stats.mvpVotes.length > 0 ? (
                     stats.mvpVotes.map((v: any, i: number) => (
                       <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mt: 0.5 }}>
-                        <Typography variant="body1" color="#ff9800" sx={{ fontWeight: 800 }}>{v.name}</Typography>
+                        <Typography variant="body1" color="text.primary" sx={{ fontWeight: 800 }}>{v.name}</Typography>
                         <Typography variant="body2" color="text.secondary">{v.count} {v.count === 1 ? 'voto' : 'votos'}</Typography>
                       </Box>
                     ))
@@ -59,7 +59,7 @@ export const FavoritesKPIs = ({ stats }: FavoritesKPIsProps) => {
                 </Box>
                 
                 <Box>
-                  <Typography variant="caption" color="text.secondary"  sx={{ textTransform: 'uppercase',  fontWeight: 800 }}>Máximo Goleador</Typography>
+                  <Typography variant="caption" sx={{ color: '#ff9800', textTransform: 'uppercase',  fontWeight: 800 }}>Máximo Goleador</Typography>
                   {stats.scorerVotes && stats.scorerVotes.length > 0 ? (
                     stats.scorerVotes.map((v: any, i: number) => (
                       <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mt: 0.5 }}>
@@ -73,7 +73,7 @@ export const FavoritesKPIs = ({ stats }: FavoritesKPIsProps) => {
                 </Box>
 
                 <Box>
-                  <Typography variant="caption" color="text.secondary"  sx={{ textTransform: 'uppercase',  fontWeight: 800 }}>Máximo Asistente</Typography>
+                  <Typography variant="caption" sx={{ color: '#ff9800', textTransform: 'uppercase',  fontWeight: 800 }}>Máximo Asistente</Typography>
                   {stats.assistVotes && stats.assistVotes.length > 0 ? (
                     stats.assistVotes.map((v: any, i: number) => (
                       <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mt: 0.5 }}>

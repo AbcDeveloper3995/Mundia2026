@@ -48,7 +48,7 @@ export const FunStats = ({ stats }: FunStatsProps) => {
                   flexDirection: 'column',
                   gap: 1
                 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }} color={config.color}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: config.color }}>
                     {config.title}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
