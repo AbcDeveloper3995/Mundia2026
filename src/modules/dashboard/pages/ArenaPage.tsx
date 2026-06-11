@@ -265,7 +265,7 @@ export const ArenaPage = () => {
               <Typography variant="h6" sx={{ color: 'warning.main', fontWeight: 800, mb: 2 }}>Retos Entrantes</Typography>
               <Grid container spacing={2}>
                 {incomingPending.map(c => (
-                  <Grid item xs={12} sm={6} key={c.id}>
+                  <Grid size={{ xs: 12, sm: 6 }} key={c.id}>
                     <Paper sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'warning.main', bgcolor: 'rgba(255, 152, 0, 0.1)' }}>
                       <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
                         {c.challenger?.name} te ha retado
@@ -292,7 +292,7 @@ export const ArenaPage = () => {
               <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 800, mb: 2 }}>Retos Enviados (Esperando...)</Typography>
               <Grid container spacing={2}>
                 {outgoingPending.map(c => (
-                  <Grid item xs={12} sm={6} key={c.id}>
+                  <Grid size={{ xs: 12, sm: 6 }} key={c.id}>
                     <Paper sx={{ p: 2, borderRadius: 2, border: '1px solid rgba(255,255,255,0.1)' }}>
                       <Typography variant="body2" sx={{ fontWeight: 800, mb: 1 }}>
                         Retaste a {c.challenged?.name}
@@ -345,7 +345,7 @@ export const ArenaPage = () => {
                   }
 
                   return (
-                    <Grid item xs={12} key={c.id}>
+                    <Grid size={{ xs: 12 }} key={c.id}>
                       <Paper sx={{ p: 2, borderRadius: 2, bgcolor: bgColor, border: '1px solid', borderColor: borderColor, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Box>
                           <Typography variant="body2" sx={{ fontWeight: 800 }}>
