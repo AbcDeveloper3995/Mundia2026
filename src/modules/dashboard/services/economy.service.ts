@@ -2,6 +2,7 @@ import { supabase } from '@/services/supabase';
 
 export interface GlobalSettings {
   banner_message: string;
+  banner_expiration?: number;
   user_expenses: Record<string, number>;
   user_unlocks: Record<string, { streaks?: number, hof?: number, rivalry?: number }>;
 }
@@ -24,6 +25,9 @@ export const fetchGlobalSettings = async (): Promise<GlobalSettings> => {
   const settings = { ...defaultSettings };
   data.forEach((row: any) => {
     if (row.key === 'banner_message') settings.banner_message = row.value;
+    if (row.key === 'banner_expiration') {
+      try { settings.banner_expiration = parseInt(row.value, 10); } catch(e) {}
+    }
     if (row.key === 'user_expenses') {
       try {
         settings.user_expenses = JSON.parse(row.value);
@@ -43,8 +47,11 @@ export const fetchGlobalSettings = async (): Promise<GlobalSettings> => {
   return settings;
 };
 
-export const updateBannerMessage = async (message: string) => {
-  const { error } = await supabase.from('global_settings').upsert({ key: 'banner_message', value: message });
+export const updateBannerMessage = async (message: string, expiration: number) => {
+  const { error } = await supabase.from('global_settings').upsert([
+    { key: 'banner_message', value: message },
+    { key: 'banner_expiration', value: expiration.toString() }
+  ]);
   if (error) throw error;
 };
 
