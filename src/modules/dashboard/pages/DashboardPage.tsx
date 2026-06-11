@@ -13,6 +13,9 @@ import { RulesModal } from '../components/RulesModal';
 import { AdminProgressWidget } from '../components/AdminProgressWidget';
 import GavelIcon from '@mui/icons-material/Gavel';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import CampaignIcon from '@mui/icons-material/Campaign';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { fetchGlobalSettings, updateBannerMessage, spendUserCoins } from '../services/economy.service';
 
 export const DashboardPage = () => {
   const { user, role } = useAuthStore();
@@ -21,6 +24,11 @@ export const DashboardPage = () => {
   const [rulesOpen, setRulesOpen] = useState(false);
   const [messiIndex, setMessiIndex] = useState(0);
   const messiImages = ['/messi1.jpg', '/messi2.jpg'];
+
+  const [bannerMessage, setBannerMessage] = useState('📢 ¿Quieres que todos lean tu mensaje? Haz clic en la bocina de la derecha para secuestrar este banner por 5 MC.');
+  const [hijackModalOpen, setHijackModalOpen] = useState(false);
+  const [newBannerText, setNewBannerText] = useState('');
+  const [buying, setBuying] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -33,8 +41,14 @@ export const DashboardPage = () => {
     const loadStats = async () => {
       if (!user) return;
       try {
-        const data = await fetchDashboardStats(user.id);
+        const [data, settings] = await Promise.all([
+          fetchDashboardStats(user.id),
+          fetchGlobalSettings()
+        ]);
         setStats(data);
+        if (settings.banner_message) {
+          setBannerMessage(settings.banner_message);
+        }
       } catch (error) {
         console.error('Error loading stats', error);
       } finally {
@@ -43,6 +57,33 @@ export const DashboardPage = () => {
     };
     loadStats();
   }, [user]);
+
+  const handleHijackBanner = async () => {
+    if (!user || !stats) return;
+    if (!stats.hasCompletedQuiniela && role !== 'ADMIN') {
+      alert('¡Debes guardar toda tu quiniela completa para acceder a tus MessiCoins!');
+      return;
+    }
+    if (stats.myCoins < 5) {
+      alert('¡No tienes suficientes MessiCoins! Cuesta 5 MC.');
+      return;
+    }
+    if (!newBannerText.trim()) return;
+
+    try {
+      setBuying(true);
+      await spendUserCoins(user.id, 5);
+      await updateBannerMessage(newBannerText);
+      setBannerMessage(newBannerText);
+      setStats({ ...stats, myCoins: stats.myCoins - 5 });
+      setHijackModalOpen(false);
+      setNewBannerText('');
+    } catch (e: any) {
+      alert('Error al secuestrar el banner: ' + e.message);
+    } finally {
+      setBuying(false);
+    }
+  };
 
   return (
     <Box>
@@ -56,8 +97,9 @@ export const DashboardPage = () => {
           color: 'white',
           py: 1.5, mb: 4, borderRadius: 2,
           whiteSpace: 'nowrap',
-          display: 'flex',
-          boxShadow: '0 4px 20px rgba(211,47,47,0.4)'
+          alignItems: 'center',
+          boxShadow: '0 4px 20px rgba(211,47,47,0.4)',
+          position: 'relative'
         }}>
           <Typography variant="h6" sx={{
             fontWeight: 900,
@@ -70,8 +112,17 @@ export const DashboardPage = () => {
               '100%': { transform: 'translateX(-100%)' }
             }
           }}>
-            ⚠️ ATENCIÓN: Si eres Madridista comienzas con -20ptos ⚠️
+            {bannerMessage}
           </Typography>
+
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => setHijackModalOpen(true)}
+            sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', minWidth: 0, p: 1, borderRadius: 2 }}
+          >
+            <CampaignIcon />
+          </Button>
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 6 }}>
@@ -85,9 +136,19 @@ export const DashboardPage = () => {
               </Typography>
             </Box>
             {stats && (
-              <Box sx={{ mt: 1.5, display: 'inline-flex', alignItems: 'center', bgcolor: 'rgba(255, 193, 7, 0.1)', border: '1px solid #ffc107', borderRadius: 2, px: 2, py: 0.5, gap: 1, width: 'fit-content' }}>
-                <Typography variant="body2" sx={{ color: '#ffc107', fontWeight: 900, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 0.5 }}><MonetizationOnIcon sx={{ fontSize: 18 }}/> Saldo en MessiCoins (MC):</Typography>
-                <Typography variant="h6" sx={{ color: '#ffc107', fontWeight: 900 }}>{stats.myCoins}</Typography>
+              <Box sx={{ mt: 1.5, display: 'inline-flex', alignItems: 'center', gap: 1, width: 'fit-content' }}>
+                {(stats.hasCompletedQuiniela || role === 'ADMIN') ? (
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', bgcolor: 'rgba(255, 193, 7, 0.1)', border: '1px solid #ffc107', borderRadius: 2, px: 2, py: 0.5, gap: 1 }}>
+                    <Typography variant="body2" sx={{ color: '#ffc107', fontWeight: 900, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 0.5 }}><MonetizationOnIcon sx={{ fontSize: 18 }} /> Saldo en MessiCoins (MC):</Typography>
+                    <Typography variant="h6" sx={{ color: '#ffc107', fontWeight: 900 }}>{stats.myCoins}</Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', bgcolor: 'rgba(255, 255, 255, 0.05)', border: '1px dashed rgba(255, 255, 255, 0.3)', borderRadius: 2, px: 2, py: 0.5 }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                      ⏳ Guarda toda tu quiniela para recibir 100 MC
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             )}
           </Box>
@@ -204,13 +265,17 @@ export const DashboardPage = () => {
             {role === 'ADMIN' && <AdminProgressWidget stats={stats} />}
 
             {/* 1. KPIs Principales */}
-            <MainKPIs stats={stats} myUsername={user?.user_metadata?.username} />
+            <MainKPIs stats={stats} myUsername={user?.user_metadata?.username} updateMyCoins={(amount: number) => {
+              if (stats) setStats({ ...stats, myCoins: stats.myCoins + amount });
+            }} />
 
             {/* Favoritos */}
             <FavoritesKPIs stats={stats} />
 
             {/* 2. Estadísticas Divertidas (Salón de la fama) */}
-            <FunStats stats={stats} />
+            <FunStats stats={stats} updateMyCoins={(amount: number) => {
+              if (stats) setStats({ ...stats, myCoins: stats.myCoins + amount });
+            }} />
 
             {/* 3. Comparaciones y Widgets (Solo Admins) */}
             {role === 'ADMIN' && (
@@ -226,6 +291,32 @@ export const DashboardPage = () => {
       </motion.div>
 
       <RulesModal open={rulesOpen} onClose={() => setRulesOpen(false)} />
+
+      <Dialog open={hijackModalOpen} onClose={() => setHijackModalOpen(false)} PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: 4, minWidth: { xs: 300, sm: 400 } } }}>
+        <DialogTitle sx={{ fontWeight: 900, color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CampaignIcon /> Secuestrar Banner (5 MC)
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Paga 5 MessiCoins para reemplazar el mensaje global que verán todos los participantes en su Dashboard.
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Escribe tu mensaje"
+            variant="outlined"
+            value={newBannerText}
+            onChange={(e) => setNewBannerText(e.target.value)}
+            inputProps={{ maxLength: 100 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button onClick={() => setHijackModalOpen(false)} color="inherit" disabled={buying}>Cancelar</Button>
+          <Button onClick={handleHijackBanner} variant="contained" color="warning" disabled={buying || !newBannerText.trim()} sx={{ fontWeight: 800 }}>
+            {buying ? 'Comprando...' : 'Pagar 5 MC'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

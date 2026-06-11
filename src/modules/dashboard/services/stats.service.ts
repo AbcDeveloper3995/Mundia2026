@@ -1,6 +1,7 @@
 import { supabase } from '@/services/supabase';
 import { fetchLeaderboard, type LeaderboardEntry, type Prediction, type PredictionAwards } from '@/modules/predictions/services/predictions.service';
 import { fetchAllMatches, fetchTeams, fetchOfficialAwards, type Match } from '@/modules/admin/services/admin.service';
+import { fetchGlobalSettings } from '@/modules/dashboard/services/economy.service';
 
 export interface MatchStatsInfo {
   matchName: string;
@@ -14,6 +15,7 @@ export interface MatchStatsInfo {
 }
 
 export interface DashboardStats {
+  hasCompletedQuiniela: boolean;
   // Main KPIs
   position: number;
   totalParticipants: number;
@@ -67,14 +69,15 @@ export interface DashboardStats {
 
 export const fetchDashboardStats = async (userId: string): Promise<DashboardStats> => {
   // 1. Fetch all required data in parallel
-  const [leaderboard, matches, teams, { data: predsData }, { data: awardsData }, { data: profilesData }, officialAwards] = await Promise.all([
+  const [leaderboard, matches, teams, { data: predsData }, { data: awardsData }, { data: profilesData }, officialAwards, globalSettings] = await Promise.all([
     fetchLeaderboard(),
     fetchAllMatches(),
     fetchTeams(),
     supabase.from('predictions').select('*'),
     supabase.from('prediction_awards').select('*'),
     supabase.from('profiles').select('id, username'),
-    fetchOfficialAwards()
+    fetchOfficialAwards(),
+    fetchGlobalSettings()
   ]);
 
   const predictions = (predsData || []) as Prediction[];
@@ -87,7 +90,12 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   const position = myIndex !== -1 ? myIndex + 1 : 0;
   const myEntry = leaderboard.find(l => l.userId === userId);
   const totalPoints = myEntry?.totalPoints || 0;
-  const myCoins = myEntry?.coins !== undefined ? myEntry.coins : 100;
+  
+  let myCoins = myEntry?.coins !== undefined ? myEntry.coins : 100;
+  if (!myEntry) {
+    const spent = globalSettings.user_expenses[userId] || 0;
+    myCoins = 100 - spent;
+  }
 
   let distanceToLeader = null;
   let distanceToNext = null;
@@ -513,7 +521,10 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     }
   });
 
+  const hasCompletedQuiniela = matches.length > 0 && myPredictions.length >= matches.length;
+
   return {
+    hasCompletedQuiniela,
     position,
     totalParticipants: leaderboard.length,
     totalPoints,

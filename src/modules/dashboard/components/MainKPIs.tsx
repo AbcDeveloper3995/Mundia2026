@@ -8,9 +8,10 @@ import { RivalryWidget } from './RivalryWidget';
 interface MainKPIsProps {
   stats: any; // DashboardStats
   myUsername?: string;
+  updateMyCoins: (amount: number) => void;
 }
 
-export const MainKPIs = ({ stats, myUsername }: MainKPIsProps) => {
+export const MainKPIs = ({ stats, myUsername, updateMyCoins }: MainKPIsProps) => {
   return (
     <Box sx={{ mb: 4 }}>
       <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 800, mb: 3 }}>
@@ -92,7 +93,7 @@ export const MainKPIs = ({ stats, myUsername }: MainKPIsProps) => {
         {/* ROW 2: Rivalidad */}
         <Grid size={{ xs: 12, md: 6, lg: 4 }}  >
           <motion.div whileHover={{ y: -5 }} style={{ height: '100%' }}>
-            <RivalryWidget stats={stats} myUsername={myUsername || 'Tú'} />
+            <RivalryWidget stats={stats} myUsername={myUsername || 'Tú'} updateMyCoins={updateMyCoins} />
           </motion.div>
         </Grid>
 

@@ -1,5 +1,10 @@
-import { Box, Typography, Paper, Grid } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Paper, Grid, Button, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
+import LockIcon from '@mui/icons-material/Lock';
+import { useAuthStore } from '@/store/auth.store';
+import { fetchGlobalSettings, unlockFeature } from '../services/economy.service';
+import { CountdownTimer } from './CountdownTimer';
 
 // Iconos para cada premio
 const trophyConfig = {
@@ -17,9 +22,57 @@ const trophyConfig = {
 
 interface FunStatsProps {
   stats: any; // DashboardStats
+  updateMyCoins: (amount: number) => void;
 }
 
-export const FunStats = ({ stats }: FunStatsProps) => {
+export const FunStats = ({ stats, updateMyCoins }: FunStatsProps) => {
+  const { user, role } = useAuthStore();
+  const [unlocked, setUnlocked] = useState(false);
+  const [buying, setBuying] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [expireTime, setExpireTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (!user) return;
+      try {
+        const settings = await fetchGlobalSettings();
+        const unlockTime = settings.user_unlocks?.[user.id]?.hof;
+        if (unlockTime && (Date.now() - unlockTime < 86400000)) { // 24 hours
+          setUnlocked(true);
+          setExpireTime(unlockTime + 86400000);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setChecking(false);
+      }
+    };
+    checkStatus();
+  }, [user]);
+
+  const handleUnlock = async () => {
+    if (!user) return;
+    if (!stats.hasCompletedQuiniela && role !== 'ADMIN') {
+      alert('¡Debes guardar toda tu quiniela completa para acceder a tus MessiCoins!');
+      return;
+    }
+    if (stats.myCoins < 10) {
+      alert('¡No tienes suficientes MessiCoins! Cuesta 10 MC.');
+      return;
+    }
+    try {
+      setBuying(true);
+      await unlockFeature(user.id, 'hof', 10);
+      setUnlocked(true);
+      setExpireTime(Date.now() + 86400000);
+      updateMyCoins(-10);
+    } catch (e: any) {
+      alert('Error al comprar: ' + e.message);
+    } finally {
+      setBuying(false);
+    }
+  };
   const cards = [
     { key: 'nostradamus', data: stats.nostradamus, value: stats.nostradamus ? `${stats.nostradamus.count} exactos` : 'Nadie aún' },
     { key: 'suertudo', data: stats.suertudo, value: stats.suertudo ? `${stats.suertudo.count} aciertos` : 'Nadie aún' },
@@ -34,11 +87,21 @@ export const FunStats = ({ stats }: FunStatsProps) => {
   ];
 
   return (
-    <Box sx={{ mb: 4 }}>
-      <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 800, mb: 3 }}>
-        Salón de la Fama
-      </Typography>
-      <Grid container spacing={2}>
+    <Box sx={{ mb: 6, position: 'relative' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 }}>
+          Salón de la Fama
+        </Typography>
+        {unlocked && expireTime && (
+          <CountdownTimer targetDate={expireTime} onExpire={() => setUnlocked(false)} />
+        )}
+      </Box>
+      <Grid container spacing={2} sx={{ 
+        filter: unlocked ? 'none' : 'blur(10px)', 
+        pointerEvents: unlocked ? 'auto' : 'none', 
+        transition: 'all 0.5s ease',
+        userSelect: unlocked ? 'auto' : 'none'
+      }}>
         {cards.map((card, idx) => {
           const config = trophyConfig[card.key as keyof typeof trophyConfig];
           return (
@@ -75,6 +138,26 @@ export const FunStats = ({ stats }: FunStatsProps) => {
           );
         })}
       </Grid>
+
+      {!unlocked && !checking && (
+        <Box sx={{ 
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+          zIndex: 10 
+        }}>
+          <Button 
+            variant="contained" 
+            color="warning" 
+            size="large" 
+            onClick={handleUnlock} 
+            disabled={buying} 
+            startIcon={buying ? <CircularProgress size={20} color="inherit" /> : <LockIcon />} 
+            sx={{ fontWeight: 900, px: 4, py: 2, borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', textTransform: 'uppercase' }}
+          >
+            {buying ? 'Procesando...' : 'Revelar Salón de la Fama (10 MC)'}
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 };

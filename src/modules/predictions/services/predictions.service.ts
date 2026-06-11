@@ -155,6 +155,7 @@ export const saveAllPredictions = async (
 };
 
 import { fetchAllMatches, fetchOfficialAwards, type Match } from '@/modules/admin/services/admin.service';
+import { fetchGlobalSettings } from '@/modules/dashboard/services/economy.service';
 
 export const recalculateAllLeaderboards = async () => {
   // 1. Traer todos los datos reales
@@ -352,11 +353,12 @@ export interface LeaderboardEntry {
 }
 
 export const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
-  const [awardsResponse, profilesResponse, matchesResponse, predsResponse] = await Promise.all([
+  const [awardsResponse, profilesResponse, matchesResponse, predsResponse, globalSettings] = await Promise.all([
     supabase.from('prediction_awards').select('user_id, total_points, coins'),
     supabase.from('profiles').select('id, username'),
     supabase.from('matches').select('id, match_date, is_finished').eq('is_finished', true),
-    supabase.from('predictions').select('user_id, match_id, points_earned')
+    supabase.from('predictions').select('user_id, match_id, points_earned'),
+    fetchGlobalSettings()
   ]);
 
   if (awardsResponse.error) throw awardsResponse.error;
@@ -377,13 +379,18 @@ export const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
   const lastMatch = matches.length > 0 ? matches[matches.length - 1] : null;
   const last3Matches = matches.slice(-3); // Toma los últimos 3
 
-  const baseEntries = (awardsResponse.data || []).map((row: any) => ({
-    userId: row.user_id,
-    username: profilesMap[row.user_id] || row.user_id.substring(0, 8),
-    totalPoints: row.total_points || 0,
-    coins: row.coins !== undefined && row.coins !== null ? row.coins : 100,
-    oldPoints: row.total_points || 0
-  }));
+  const baseEntries = (awardsResponse.data || []).map((row: any) => {
+    const rawCoins = row.coins !== undefined && row.coins !== null ? row.coins : 100;
+    const spent = globalSettings.user_expenses[row.user_id] || 0;
+    
+    return {
+      userId: row.user_id,
+      username: profilesMap[row.user_id] || row.user_id.substring(0, 8),
+      totalPoints: row.total_points || 0,
+      coins: rawCoins - spent,
+      oldPoints: row.total_points || 0
+    };
+  });
 
   if (lastMatch) {
     baseEntries.forEach(entry => {
