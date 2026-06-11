@@ -198,10 +198,10 @@ export const LeaderboardPage = () => {
                           transition: 'all 0.3s ease'
                         }}>
                           {(entry.recentForm || []).map((status, i) => (
-                            <Tooltip key={i} title={status === 'EXACT' ? 'Acertó marcador exacto (+5pts)' : status === 'WIN' ? 'Acertó ganador (+3pts)' : 'No sumó puntos'}>
+                            <Tooltip key={i} title={status !== 'LOSS' ? 'Sumó puntos' : 'No sumó puntos'}>
                               <Box sx={{ 
                                 width: 12, height: 12, borderRadius: '50%',
-                                bgcolor: status === 'EXACT' ? '#00e676' : status === 'WIN' ? '#ffeb3b' : '#f44336',
+                                bgcolor: status !== 'LOSS' ? '#00e676' : '#f44336',
                                 border: '1px solid rgba(0,0,0,0.5)',
                                 boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
                               }} />

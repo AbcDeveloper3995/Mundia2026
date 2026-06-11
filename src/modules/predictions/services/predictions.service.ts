@@ -324,13 +324,11 @@ export const recalculateAllLeaderboards = async () => {
   }
 
   // Guardado masivo
-  // Debido a las restricciones de Supabase sin RPC, haremos las actualizaciones por lotes
-  const chunkSize = 50;
-  for (let i = 0; i < predictionUpdates.length; i += chunkSize) {
-    const chunk = predictionUpdates.slice(i, i + chunkSize);
-    await supabase.from('predictions').upsert(chunk);
+  for (const update of predictionUpdates) {
+    await supabase.from('predictions').update({ points_earned: update.points_earned }).eq('id', update.id);
   }
 
+  const chunkSize = 50;
   for (let i = 0; i < awardsUpdates.length; i += chunkSize) {
     const chunk = awardsUpdates.slice(i, i + chunkSize);
     await supabase.from('prediction_awards').upsert(chunk, { onConflict: 'user_id' });
