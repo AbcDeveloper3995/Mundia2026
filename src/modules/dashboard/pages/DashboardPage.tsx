@@ -292,7 +292,7 @@ export const DashboardPage = () => {
 
       <RulesModal open={rulesOpen} onClose={() => setRulesOpen(false)} />
 
-      <Dialog open={hijackModalOpen} onClose={() => setHijackModalOpen(false)} PaperProps={{ sx: { bgcolor: 'background.paper', borderRadius: 4, minWidth: { xs: 300, sm: 400 } } }}>
+      <Dialog open={hijackModalOpen} onClose={() => setHijackModalOpen(false)} sx={{ '& .MuiDialog-paper': { bgcolor: 'background.paper', borderRadius: 4, minWidth: { xs: 300, sm: 400 } } }}>
         <DialogTitle sx={{ fontWeight: 900, color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
           <CampaignIcon /> Secuestrar Banner (5 MC)
         </DialogTitle>
@@ -307,7 +307,7 @@ export const DashboardPage = () => {
             variant="outlined"
             value={newBannerText}
             onChange={(e) => setNewBannerText(e.target.value)}
-            inputProps={{ maxLength: 100 }}
+            InputProps={{ inputProps: { maxLength: 100 } }}
           />
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>
