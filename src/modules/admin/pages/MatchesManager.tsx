@@ -6,6 +6,7 @@ import { calculateGroupStandings, generateBracket, getWinner, type TeamStanding 
 import { TournamentBracket } from '../components/TournamentBracket';
 import { ThirdsRanking } from '../../../components/ThirdsRanking';
 import { recalculateAllLeaderboards } from '@/modules/predictions/services/predictions.service';
+import { resolveChallengesForMatch } from '@/modules/dashboard/services/arena.service';
 import { TOP_PLAYERS } from '@/utils/players.data';
 import { motion } from 'framer-motion';
 
@@ -129,6 +130,7 @@ export const MatchesManager = () => {
         setMatches(updatedMatches);
         const group = groups.find(g => g.id === selectedGroup);
         if (group) updateStandings(group, updatedMatches);
+        if (isFinished) resolveChallengesForMatch(matchId).catch(console.error);
       } else {
         const updatedMatches = knockoutMatches.map(m => m.id === matchId ? { ...m, is_finished: isFinished } : m);
         setKnockoutMatches(updatedMatches);
@@ -164,6 +166,7 @@ export const MatchesManager = () => {
               }
             }
           }
+          resolveChallengesForMatch(matchId).catch(console.error);
         }
       }
     } catch (err: any) {

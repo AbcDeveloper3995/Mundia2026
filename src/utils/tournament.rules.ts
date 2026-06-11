@@ -1,4 +1,5 @@
 import type { Group, Match, Team } from '@/modules/admin/services/admin.service';
+import type { Prediction } from '@/modules/predictions/services/predictions.service';
 import COMBINATIONS_MATRIX from './fifa_combinations.json';
 
 export interface TeamStanding {
@@ -254,4 +255,83 @@ export const generateBracket = (groups: Group[], allMatches: Match[]) => {
   const matchups = [...leftBracket, ...rightBracket].filter(m => m.length === 2);
 
   return matchups;
+};
+
+export const getPointsBreakdown = (
+  match: Match,
+  prediction: Prediction | undefined,
+  allMatches: Match[],
+  allTeams: Team[]
+) => {
+  if (!prediction) return { breakdown: [], total: 0 };
+  const breakdown: { points: number, reason: string }[] = [];
+  const realMatch = allMatches.find(m => m.id === match.id);
+  if (!realMatch) return { breakdown: [], total: 0 };
+
+  let total = 0;
+  const addPoints = (pts: number, reason: string) => {
+    breakdown.push({ points: pts, reason });
+    total += pts;
+  };
+
+  const isKnockout = realMatch.stage !== 'GROUP';
+
+  // Reglas eliminatorias
+  if (isKnockout) {
+    const stageMatches = allMatches.filter(m => m.stage === realMatch.stage);
+    const teamsInStage = new Set<string>();
+    stageMatches.forEach(sm => {
+      if (sm.home_team_id) teamsInStage.add(sm.home_team_id);
+      if (sm.away_team_id) teamsInStage.add(sm.away_team_id);
+    });
+
+    if (prediction.predicted_home_team_id && teamsInStage.has(prediction.predicted_home_team_id)) {
+      const teamName = allTeams.find(t => t.id === prediction.predicted_home_team_id)?.name || 'Equipo';
+      addPoints(2, `${teamName} clasificó a esta ronda`);
+    }
+    if (prediction.predicted_away_team_id && teamsInStage.has(prediction.predicted_away_team_id)) {
+      const teamName = allTeams.find(t => t.id === prediction.predicted_away_team_id)?.name || 'Equipo';
+      addPoints(2, `${teamName} clasificó a esta ronda`);
+    }
+
+    if (realMatch.home_team_id && realMatch.away_team_id && prediction.predicted_home_team_id && prediction.predicted_away_team_id) {
+      if (
+        (prediction.predicted_home_team_id === realMatch.home_team_id && prediction.predicted_away_team_id === realMatch.away_team_id) ||
+        (prediction.predicted_home_team_id === realMatch.away_team_id && prediction.predicted_away_team_id === realMatch.home_team_id)
+      ) {
+        addPoints(5, `Acertaste el enfrentamiento exacto`);
+      }
+    }
+  }
+
+  if (realMatch.is_finished && realMatch.home_score !== null && realMatch.away_score !== null) {
+    let canEarnScorePoints = true;
+    let realHomeScore = realMatch.home_score;
+    let realAwayScore = realMatch.away_score;
+
+    if (isKnockout) {
+      canEarnScorePoints = false;
+      if (prediction.predicted_home_team_id === realMatch.home_team_id && prediction.predicted_away_team_id === realMatch.away_team_id) {
+        canEarnScorePoints = true;
+      } else if (prediction.predicted_home_team_id === realMatch.away_team_id && prediction.predicted_away_team_id === realMatch.home_team_id) {
+        canEarnScorePoints = true;
+        realHomeScore = realMatch.away_score;
+        realAwayScore = realMatch.home_score;
+      }
+    }
+
+    if (canEarnScorePoints) {
+      if (prediction.predicted_home_score === realHomeScore && prediction.predicted_away_score === realAwayScore) {
+        addPoints(5, `Resultado exacto del partido`);
+      } else {
+        const actualWinner = realHomeScore > realAwayScore ? 'HOME' : realHomeScore < realAwayScore ? 'AWAY' : 'DRAW';
+        const predWinner = prediction.predicted_home_score > prediction.predicted_away_score ? 'HOME' : prediction.predicted_home_score < prediction.predicted_away_score ? 'AWAY' : 'DRAW';
+        if (actualWinner === predWinner) {
+          addPoints(3, `Ganador o empate correcto`);
+        }
+      }
+    }
+  }
+
+  return { breakdown, total };
 };

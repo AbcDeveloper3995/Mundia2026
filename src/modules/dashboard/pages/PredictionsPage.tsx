@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Paper, Grid, CircularProgress, Alert, Button, TextField, Tabs, Tab, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
 import { fetchAllMatches, fetchTeams, fetchGroups, type Match, type Team, type Group } from '@/modules/admin/services/admin.service';
 import { fetchUserPredictions, saveAllPredictions, fetchUserAwards, saveUserAwards, type Prediction, type PredictionAwards } from '@/modules/predictions/services/predictions.service';
-import { calculateGroupStandings, generateBracket, getWinner } from '@/utils/tournament.rules';
+import { calculateGroupStandings, generateBracket, getWinner, getPointsBreakdown } from '@/utils/tournament.rules';
 import { ThirdsRanking } from '@/components/ThirdsRanking';
 import { TOP_PLAYERS } from '@/utils/players.data';
 import { useAuthStore } from '@/store/auth.store';
@@ -226,79 +226,6 @@ export const PredictionsPage = () => {
     return sim;
   }, [matches, predictions, groups]);
 
-  const getPointsBreakdown = (match: Match, prediction?: Prediction) => {
-    if (!prediction) return { breakdown: [], total: 0 };
-    const breakdown: { points: number, reason: string }[] = [];
-    const realMatch = matches.find(m => m.id === match.id);
-    if (!realMatch) return { breakdown: [], total: 0 };
-
-    let total = 0;
-    const addPoints = (pts: number, reason: string) => {
-      breakdown.push({ points: pts, reason });
-      total += pts;
-    };
-
-    const isKnockout = realMatch.stage !== 'GROUP';
-
-    // Reglas eliminatorias
-    if (isKnockout) {
-      const stageMatches = matches.filter(m => m.stage === realMatch.stage);
-      const teamsInStage = new Set<string>();
-      stageMatches.forEach(sm => {
-        if (sm.home_team_id) teamsInStage.add(sm.home_team_id);
-        if (sm.away_team_id) teamsInStage.add(sm.away_team_id);
-      });
-
-      if (prediction.predicted_home_team_id && teamsInStage.has(prediction.predicted_home_team_id)) {
-        const teamName = teams.find(t => t.id === prediction.predicted_home_team_id)?.name || 'Equipo';
-        addPoints(2, `${teamName} clasificó a esta ronda`);
-      }
-      if (prediction.predicted_away_team_id && teamsInStage.has(prediction.predicted_away_team_id)) {
-        const teamName = teams.find(t => t.id === prediction.predicted_away_team_id)?.name || 'Equipo';
-        addPoints(2, `${teamName} clasificó a esta ronda`);
-      }
-
-      if (realMatch.home_team_id && realMatch.away_team_id && prediction.predicted_home_team_id && prediction.predicted_away_team_id) {
-        if (
-          (prediction.predicted_home_team_id === realMatch.home_team_id && prediction.predicted_away_team_id === realMatch.away_team_id) ||
-          (prediction.predicted_home_team_id === realMatch.away_team_id && prediction.predicted_away_team_id === realMatch.home_team_id)
-        ) {
-          addPoints(5, `Acertaste el enfrentamiento exacto`);
-        }
-      }
-    }
-
-    if (realMatch.is_finished && realMatch.home_score !== null && realMatch.away_score !== null) {
-      let canEarnScorePoints = true;
-      let realHomeScore = realMatch.home_score;
-      let realAwayScore = realMatch.away_score;
-
-      if (isKnockout) {
-        canEarnScorePoints = false;
-        if (prediction.predicted_home_team_id === realMatch.home_team_id && prediction.predicted_away_team_id === realMatch.away_team_id) {
-          canEarnScorePoints = true;
-        } else if (prediction.predicted_home_team_id === realMatch.away_team_id && prediction.predicted_away_team_id === realMatch.home_team_id) {
-          canEarnScorePoints = true;
-          realHomeScore = realMatch.away_score;
-          realAwayScore = realMatch.home_score;
-        }
-      }
-
-      if (canEarnScorePoints) {
-        if (prediction.predicted_home_score === realHomeScore && prediction.predicted_away_score === realAwayScore) {
-          addPoints(5, `Resultado exacto del partido`);
-        } else {
-          const actualWinner = realHomeScore > realAwayScore ? 'HOME' : realHomeScore < realAwayScore ? 'AWAY' : 'DRAW';
-          const predWinner = prediction.predicted_home_score > prediction.predicted_away_score ? 'HOME' : prediction.predicted_home_score < prediction.predicted_away_score ? 'AWAY' : 'DRAW';
-          if (actualWinner === predWinner) {
-            addPoints(3, `Ganador o empate correcto`);
-          }
-        }
-      }
-    }
-
-    return { breakdown, total };
-  };
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress color="primary" /></Box>;
 
@@ -313,7 +240,7 @@ export const PredictionsPage = () => {
 
     const realMatch = matches.find(m => m.id === match.id);
     const isLocked = realMatch?.is_finished;
-    const { breakdown, total } = getPointsBreakdown(match, prediction);
+    const { breakdown, total } = getPointsBreakdown(match, prediction, matches, teams);
     
     // Verificamos si tiene una predicción válida para mostrar borde verde o rojo
     const isKnockout = match.stage !== 'GROUP';

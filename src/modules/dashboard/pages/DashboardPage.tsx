@@ -1,9 +1,10 @@
-import { Box, Typography, Paper, Grid, Button, CircularProgress } from '@mui/material';
+import { Box, Typography, Paper, Grid, Button, CircularProgress, Alert, Link, Tooltip } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { fetchDashboardStats, type DashboardStats } from '../services/stats.service';
+import { fetchChallenges } from '../services/arena.service';
 import { MainKPIs } from '../components/MainKPIs';
 import { FunStats } from '../components/FunStats';
 import { FavoritesKPIs } from '../components/FavoritesKPIs';
@@ -31,6 +32,7 @@ export const DashboardPage = () => {
   const [hijackModalOpen, setHijackModalOpen] = useState(false);
   const [newBannerText, setNewBannerText] = useState('');
   const [buying, setBuying] = useState(false);
+  const [pendingChallengesCount, setPendingChallengesCount] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -43,9 +45,10 @@ export const DashboardPage = () => {
     const loadStats = async () => {
       if (!user) return;
       try {
-        const [data, settings] = await Promise.all([
+        const [data, settings, challengesData] = await Promise.all([
           fetchDashboardStats(user.id),
-          fetchGlobalSettings()
+          fetchGlobalSettings(),
+          fetchChallenges(user.id)
         ]);
         setStats(data);
         if (settings.banner_message) {
@@ -54,6 +57,8 @@ export const DashboardPage = () => {
         if (settings.banner_expiration) {
           setBannerExpiration(settings.banner_expiration);
         }
+        const pending = challengesData.filter(c => c.challenged_id === user.id && c.status === 'pending');
+        setPendingChallengesCount(pending.length);
       } catch (error) {
         console.error('Error loading stats', error);
       } finally {
@@ -178,6 +183,19 @@ export const DashboardPage = () => {
           </Button>
         </Box>
 
+        {pendingChallengesCount > 0 && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
+            <Link component={RouterLink} to="/dashboard/arena" sx={{ textDecoration: 'none' }}>
+              <Alert 
+                severity="warning" 
+                sx={{ mb: 4, borderRadius: 3, fontWeight: 800, fontSize: '1rem', border: '1px solid', borderColor: 'warning.main', cursor: 'pointer', bgcolor: 'rgba(255, 152, 0, 0.15)', color: 'warning.light' }}
+              >
+                ¡Tienes {pendingChallengesCount} reto(s) pendiente(s) en La Arena! Haz clic aquí para revisarlos.
+              </Alert>
+            </Link>
+          </motion.div>
+        )}
+
         <Grid container spacing={4} sx={{ mb: 6 }}>
 
           <Grid size={{ xs: 12, md: role === 'ADMIN' ? 6 : 12 }}  >
@@ -185,17 +203,38 @@ export const DashboardPage = () => {
               <Typography variant="h5" gutterBottom sx={{ color: 'secondary.main', fontWeight: 700 }}>
                 Accesos Rápidos
               </Typography>
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 3 }}>
-                <Button component={RouterLink} to="/dashboard/predictions" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
-                  Mis Predicciones
-                </Button>
-                <Button component={RouterLink} to="/dashboard/leaderboard" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
-                  Ranking Global
-                </Button>
-                <Button component={RouterLink} to="/dashboard/results" variant="outlined" color="secondary" sx={{ fontWeight: 800 }}>
-                  Clasificación
-                </Button>
-              </Box>
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Button fullWidth component={RouterLink} to="/dashboard/predictions" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
+                    Mis Predicciones
+                  </Button>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Button fullWidth component={RouterLink} to="/dashboard/leaderboard" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
+                    Ranking Global
+                  </Button>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Button fullWidth component={RouterLink} to="/dashboard/results" variant="outlined" color="secondary" sx={{ fontWeight: 800 }}>
+                    Clasificación
+                  </Button>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  {stats && (role === 'ADMIN' || (stats.hasCompletedQuiniela && stats.myCoins >= 50)) ? (
+                    <Button fullWidth component={RouterLink} to="/dashboard/arena" variant="contained" color="warning" sx={{ fontWeight: 800 }}>
+                      La Arena ⚔️
+                    </Button>
+                  ) : (
+                    <Tooltip title={!stats?.hasCompletedQuiniela ? "Completa y guarda toda tu quiniela para recibir tus MC y desbloquear La Arena" : "Necesitas al menos 50 MC para desbloquear La Arena"}>
+                      <span>
+                        <Button fullWidth disabled variant="contained" sx={{ fontWeight: 800, bgcolor: 'rgba(255, 152, 0, 0.2) !important', color: 'rgba(255,255,255,0.4) !important' }}>
+                          La Arena 🔒 (Mín. 50 MC)
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  )}
+                </Grid>
+              </Grid>
             </Paper>
           </Grid>
 

@@ -43,6 +43,8 @@ export interface DashboardStats {
   menudito: { username: string; count: number } | null;
   loss: { username: string; count: number } | null;
   elVeneno: { username: string; count: number } | null;
+  gladiador: { username: string; count: number } | null;
+  descocido: { username: string; count: number } | null;
 
   // Rivalry
   rivalry: {
@@ -69,7 +71,7 @@ export interface DashboardStats {
 
 export const fetchDashboardStats = async (userId: string): Promise<DashboardStats> => {
   // 1. Fetch all required data in parallel
-  const [leaderboard, matches, teams, predsData, awardsData, { data: profilesData }, officialAwards, globalSettings] = await Promise.all([
+  const [leaderboard, matches, teams, predsData, awardsData, { data: profilesData }, officialAwards, globalSettings, challengesData] = await Promise.all([
     fetchLeaderboard(),
     fetchAllMatches(),
     fetchTeams(),
@@ -77,7 +79,8 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     fetchAllPaginated('prediction_awards', '*', 'user_id'),
     supabase.from('profiles').select('id, username'),
     fetchOfficialAwards(),
-    fetchGlobalSettings()
+    fetchGlobalSettings(),
+    fetchAllPaginated('challenges')
   ]);
 
   const predictions = (predsData || []) as Prediction[];
@@ -316,6 +319,27 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     }
   }
 
+  // --- ARENA (GLADIADOR / DESCOCIDO) ---
+  const arenaWinsCounts: Record<string, number> = {};
+  const arenaLossCounts: Record<string, number> = {};
+
+  const challenges = (challengesData || []) as any[];
+  challenges.forEach(c => {
+    if (c.status === 'resolved' && c.winner_id) {
+      arenaWinsCounts[c.winner_id] = (arenaWinsCounts[c.winner_id] || 0) + 1;
+      const loser_id = c.winner_id === c.challenger_id ? c.challenged_id : c.challenger_id;
+      if (loser_id) {
+        arenaLossCounts[loser_id] = (arenaLossCounts[loser_id] || 0) + 1;
+      }
+    }
+  });
+
+  const gladiadorRaw = findWinner(uid => arenaWinsCounts[uid] || 0);
+  const gladiador = gladiadorRaw && gladiadorRaw.score > 0 ? { username: gladiadorRaw.username, count: gladiadorRaw.score } : null;
+
+  const descocidoRaw = findWinner(uid => arenaLossCounts[uid] || 0);
+  const descocido = descocidoRaw && descocidoRaw.score > 0 ? { username: descocidoRaw.username, count: descocidoRaw.score } : null;
+
   // --- RIVALRY ---
   let rivalry = null;
   const maxLeaderboardPoints = leaderboard.length > 0 ? Math.max(...leaderboard.map(l => l.totalPoints)) : 0;
@@ -549,6 +573,8 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     menudito,
     loss,
     elVeneno,
+    gladiador,
+    descocido,
     rivalry,
     podium,
     hardestMatch,

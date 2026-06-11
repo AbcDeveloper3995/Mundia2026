@@ -18,6 +18,8 @@ const trophyConfig = {
   menudito: { title: '🪙 Con un menudito', desc: 'Más +20 MessiCoins', color: '#00e676' },
   loss: { title: '💸 Con más pérdida', desc: 'Más -10 MessiCoins', color: '#ef5350' },
   elVeneno: { title: '🥶 El Veneno', desc: 'Peor racha sin puntos', color: '#00e5ff' },
+  gladiador: { title: '⚔️ El Gladiador', desc: 'Más retos ganados en La Arena', color: '#ff5722' },
+  descocido: { title: '🤕 El Descocido', desc: 'Más retos perdidos en La Arena', color: '#607d8b' },
 };
 
 interface FunStatsProps {
@@ -84,6 +86,8 @@ export const FunStats = ({ stats, updateMyCoins }: FunStatsProps) => {
     { key: 'menudito', data: stats.menudito, value: stats.menudito ? `${stats.menudito.count} veces` : 'Nadie aún' },
     { key: 'loss', data: stats.loss, value: stats.loss ? `${stats.loss.count} veces` : 'Nadie aún' },
     { key: 'elVeneno', data: stats.elVeneno, value: stats.elVeneno ? `${stats.elVeneno.count} partidos` : 'Nadie aún' },
+    { key: 'gladiador', data: stats.gladiador, value: stats.gladiador ? `${stats.gladiador.count} victorias` : 'Nadie aún' },
+    { key: 'descocido', data: stats.descocido, value: stats.descocido ? `${stats.descocido.count} derrotas` : 'Nadie aún' },
   ];
 
   return (
