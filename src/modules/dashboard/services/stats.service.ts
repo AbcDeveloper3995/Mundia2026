@@ -1,4 +1,4 @@
-import { supabase } from '@/services/supabase';
+import { supabase, fetchAllPaginated } from '@/services/supabase';
 import { fetchLeaderboard, type LeaderboardEntry, type Prediction, type PredictionAwards } from '@/modules/predictions/services/predictions.service';
 import { fetchAllMatches, fetchTeams, fetchOfficialAwards, type Match } from '@/modules/admin/services/admin.service';
 import { fetchGlobalSettings } from '@/modules/dashboard/services/economy.service';
@@ -69,12 +69,12 @@ export interface DashboardStats {
 
 export const fetchDashboardStats = async (userId: string): Promise<DashboardStats> => {
   // 1. Fetch all required data in parallel
-  const [leaderboard, matches, teams, { data: predsData }, { data: awardsData }, { data: profilesData }, officialAwards, globalSettings] = await Promise.all([
+  const [leaderboard, matches, teams, predsData, awardsData, { data: profilesData }, officialAwards, globalSettings] = await Promise.all([
     fetchLeaderboard(),
     fetchAllMatches(),
     fetchTeams(),
-    supabase.from('predictions').select('*'),
-    supabase.from('prediction_awards').select('*'),
+    fetchAllPaginated('predictions'),
+    fetchAllPaginated('prediction_awards', '*', 'user_id'),
     supabase.from('profiles').select('id, username'),
     fetchOfficialAwards(),
     fetchGlobalSettings()

@@ -1,4 +1,4 @@
-import { supabase } from '@/services/supabase';
+import { supabase, fetchAllPaginated } from '@/services/supabase';
 
 export interface Prediction {
   id: string;
@@ -32,8 +32,7 @@ export const fetchUserPredictions = async (userId: string): Promise<Prediction[]
 };
 
 export const fetchAllPredictions = async (): Promise<Prediction[]> => {
-  const { data, error } = await supabase.from('predictions').select('*');
-  if (error) throw error;
+  const data = await fetchAllPaginated('predictions');
   return data as Prediction[];
 };
 
@@ -163,8 +162,8 @@ export const recalculateAllLeaderboards = async () => {
   const officialAwards = await fetchOfficialAwards();
   
   // 2. Traer todas las predicciones de los usuarios
-  const { data: allPredictions } = await supabase.from('predictions').select('*');
-  const { data: allAwards } = await supabase.from('prediction_awards').select('*');
+  const allPredictions = await fetchAllPaginated('predictions');
+  const allAwards = await fetchAllPaginated('prediction_awards', '*', 'user_id');
   
   if (!allPredictions) return;
 
@@ -175,12 +174,12 @@ export const recalculateAllLeaderboards = async () => {
   const awardsUpdates: any[] = [];
 
   // Inicializar mapa de puntos
-  allAwards?.forEach(a => { userPointsMap[a.user_id] = 0; });
-  allPredictions.forEach(p => { if (!(p.user_id in userPointsMap)) userPointsMap[p.user_id] = 0; });
+  allAwards?.forEach((a: any) => { userPointsMap[a.user_id] = 0; });
+  allPredictions.forEach((p: any) => { if (!(p.user_id in userPointsMap)) userPointsMap[p.user_id] = 0; });
 
   // Agrupar predicciones por usuario
   const predictionsByUser: Record<string, Prediction[]> = {};
-  allPredictions.forEach(p => {
+  allPredictions.forEach((p: any) => {
     if (!predictionsByUser[p.user_id]) predictionsByUser[p.user_id] = [];
     predictionsByUser[p.user_id].push(p as Prediction);
   });
@@ -353,19 +352,17 @@ export interface LeaderboardEntry {
 }
 
 export const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
-  const [awardsResponse, profilesResponse, matchesResponse, predsResponse, globalSettings] = await Promise.all([
-    supabase.from('prediction_awards').select('user_id, total_points, coins'),
-    supabase.from('profiles').select('id, username'),
+  const [awardsData, profilesData, matchesResponse, predsData, globalSettings] = await Promise.all([
+    fetchAllPaginated('prediction_awards', 'user_id, total_points, coins', 'user_id'),
+    fetchAllPaginated('profiles', 'id, username'),
     supabase.from('matches').select('id, match_date, is_finished').eq('is_finished', true),
-    supabase.from('predictions').select('user_id, match_id, points_earned'),
+    fetchAllPaginated('predictions', 'user_id, match_id, points_earned'),
     fetchGlobalSettings()
   ]);
 
-  if (awardsResponse.error) throw awardsResponse.error;
-  
   const profilesMap: Record<string, string> = {};
-  if (profilesResponse.data) {
-    profilesResponse.data.forEach(p => {
+  if (profilesData) {
+    profilesData.forEach((p: any) => {
       profilesMap[p.id] = p.username;
     });
   }
@@ -374,12 +371,12 @@ export const fetchLeaderboard = async (): Promise<LeaderboardEntry[]> => {
     if (a.match_date && b.match_date) return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
     return a.id.localeCompare(b.id);
   });
-  const predictions = predsResponse.data || [];
+  const predictions = predsData || [];
 
   const lastMatch = matches.length > 0 ? matches[matches.length - 1] : null;
   const last3Matches = matches.slice(-3); // Toma los últimos 3
 
-  const baseEntries = (awardsResponse.data || []).map((row: any) => {
+  const baseEntries = (awardsData || []).map((row: any) => {
     const rawCoins = row.coins !== undefined && row.coins !== null ? row.coins : 100;
     const spent = globalSettings.user_expenses[row.user_id] || 0;
     
