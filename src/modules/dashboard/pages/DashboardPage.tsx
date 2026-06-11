@@ -205,9 +205,19 @@ export const DashboardPage = () => {
               </Typography>
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <Button fullWidth component={RouterLink} to="/dashboard/predictions" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
-                    Mis Predicciones
-                  </Button>
+                  {stats && (role === 'ADMIN' || stats.hasCompletedQuiniela) ? (
+                    <Button fullWidth component={RouterLink} to="/dashboard/predictions" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
+                      Mis Predicciones
+                    </Button>
+                  ) : (
+                    <Tooltip title="Lo sentimos el torneo ha comenzado">
+                      <span>
+                        <Button fullWidth disabled variant="contained" sx={{ fontWeight: 800, bgcolor: 'rgba(25, 118, 210, 0.2) !important', color: 'rgba(255,255,255,0.4) !important' }}>
+                          Mis Predicciones 🔒
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  )}
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Button fullWidth component={RouterLink} to="/dashboard/leaderboard" variant="contained" color="primary" sx={{ fontWeight: 800 }}>

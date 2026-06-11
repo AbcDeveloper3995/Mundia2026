@@ -100,7 +100,6 @@ export const MainLayout = () => {
             
             <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 3 }}>
               <Link component={RouterLink} to="/dashboard" sx={{ textDecoration: 'none', color: 'text.primary', fontWeight: 700, '&:hover': { color: 'primary.main' } }}>Inicio</Link>
-              <Link component={RouterLink} to="/dashboard/predictions" sx={{ textDecoration: 'none', color: 'text.primary', fontWeight: 700, '&:hover': { color: 'primary.main' } }}>Simulador</Link>
               <Link component={RouterLink} to="/dashboard/leaderboard" sx={{ textDecoration: 'none', color: 'text.primary', fontWeight: 700, '&:hover': { color: 'primary.main' } }}>Ranking</Link>
               <Link component={RouterLink} to="/dashboard/results" sx={{ textDecoration: 'none', color: 'text.primary', fontWeight: 700, '&:hover': { color: 'primary.main' } }}>Clasificación</Link>
               {role === 'ADMIN' && (
