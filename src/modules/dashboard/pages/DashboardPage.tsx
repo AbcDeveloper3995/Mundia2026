@@ -306,8 +306,11 @@ export const DashboardPage = () => {
             label="Escribe tu mensaje"
             variant="outlined"
             value={newBannerText}
-            onChange={(e) => setNewBannerText(e.target.value)}
-            InputProps={{ inputProps: { maxLength: 100 } }}
+            onChange={(e) => {
+              if (e.target.value.length <= 100) {
+                setNewBannerText(e.target.value);
+              }
+            }}
           />
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>
