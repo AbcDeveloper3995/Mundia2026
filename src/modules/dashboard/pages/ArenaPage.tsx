@@ -326,6 +326,10 @@ export const ArenaPage = () => {
 
                   if (c.status === 'declined') {
                     resultText = 'Rechazado';
+                  } else if (c.status === 'expired') {
+                    resultText = 'Caducado (Reembolso)';
+                    bgColor = 'rgba(255, 255, 255, 0.05)';
+                    borderColor = 'rgba(255, 255, 255, 0.1)';
                   } else if (c.status === 'accepted') {
                     resultText = 'En Progreso...';
                     borderColor = 'primary.main';

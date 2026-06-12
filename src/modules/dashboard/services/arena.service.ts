@@ -11,7 +11,7 @@ export interface Challenge {
   challenged_id: string;
   match_id: string;
   amount: number;
-  status: 'pending' | 'accepted' | 'declined' | 'resolved' | 'tied';
+  status: 'pending' | 'accepted' | 'declined' | 'resolved' | 'tied' | 'expired';
   winner_id: string | null;
   created_at: string;
   challenger?: { name: string; avatar: string | null };
@@ -137,7 +137,7 @@ export const resolveChallengesForMatch = async (matchId: string) => {
       .from('challenges')
       .select('*')
       .eq('match_id', matchId)
-      .eq('status', 'accepted');
+      .in('status', ['accepted', 'pending']);
       
     if (fetchErr) throw fetchErr;
     if (!challenges || challenges.length === 0) return;
@@ -152,6 +152,13 @@ export const resolveChallengesForMatch = async (matchId: string) => {
     if (!realMatch || !realMatch.is_finished) return;
 
     for (const challenge of challenges) {
+      // Expirar retos pendientes no contestados y reembolsar al retador
+      if (challenge.status === 'pending') {
+        await spendUserCoins(challenge.challenger_id, -challenge.amount);
+        await supabase.from('challenges').update({ status: 'expired' }).eq('id', challenge.id);
+        continue;
+      }
+
       // Fetch predictions for both users
       const [challengerPreds, challengedPreds] = await Promise.all([
         fetchUserPredictions(challenge.challenger_id),

@@ -9,6 +9,7 @@ import { recalculateAllLeaderboards } from '@/modules/predictions/services/predi
 import { resolveChallengesForMatch } from '@/modules/dashboard/services/arena.service';
 import { TOP_PLAYERS } from '@/utils/players.data';
 import { motion } from 'framer-motion';
+import { supabase } from '@/services/supabase';
 
 export const MatchesManager = () => {
   const [tab, setTab] = useState(0);
@@ -18,6 +19,7 @@ export const MatchesManager = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [allGroupMatches, setAllGroupMatches] = useState<Match[]>([]);
   const [standings, setStandings] = useState<TeamStanding[]>([]);
+  const [challengesCount, setChallengesCount] = useState<Record<string, number>>({});
   
   const [knockoutMatches, setKnockoutMatches] = useState<Match[]>([]);
   const [officialAwards, setOfficialAwards] = useState<OfficialAwards>({
@@ -49,6 +51,16 @@ export const MatchesManager = () => {
       
       const allGMatches = matchesData.filter(m => m.stage === 'GROUP');
       setAllGroupMatches(allGMatches);
+
+      // Fetch challenges to show counts
+      const { data: challengesData } = await supabase.from('challenges').select('match_id').in('status', ['accepted', 'pending']);
+      if (challengesData) {
+        const counts: Record<string, number> = {};
+        challengesData.forEach((c: any) => {
+          counts[c.match_id] = (counts[c.match_id] || 0) + 1;
+        });
+        setChallengesCount(counts);
+      }
 
       if (groupsData.length > 0) {
         // Find if we had a selected group, otherwise default to first
@@ -171,6 +183,19 @@ export const MatchesManager = () => {
       }
     } catch (err: any) {
       setError("Error actualizando el estado: " + err.message);
+    }
+  };
+
+  const handleForceResolveChallenges = async (matchId: string) => {
+    try {
+      setLoading(true);
+      await resolveChallengesForMatch(matchId);
+      alert('Retos resueltos y reembolsos procesados correctamente.');
+      await loadInitialData();
+    } catch (error: any) {
+      alert('Error: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -412,22 +437,34 @@ export const MatchesManager = () => {
                           {away.flag && <img src={away.flag} alt={away.name} style={{ width: 24, height: 16, borderRadius: 2 }} />}
                         </Box>
                       </Box>
+                      {challengesCount[match.id] > 0 && (
+                        <Typography variant="caption" color="warning.main" sx={{ display: 'block', textAlign: 'center', mb: 1, fontWeight: 800 }}>
+                          ⚔️ {challengesCount[match.id]} retos vinculados
+                        </Typography>
+                      )}
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
                         <FormControlLabel
                           control={<Switch size="small" checked={match.is_finished} onChange={(e) => handleStatusToggle(match.id, e.target.checked, false)} color="success" />}
                           label={<Typography variant="caption" sx={{ color: match.is_finished ? 'success.main' : 'text.secondary' }}>{match.is_finished ? 'Finalizado' : 'Pendiente'}</Typography>}
                         />
-                        <Button 
-                          variant="outlined" 
-                          size="small" 
-                          color="primary" 
-                          onClick={() => {
-                            updateMatch(match.id, { home_score: match.home_score, away_score: match.away_score });
-                            alert('Resultado guardado correctamente');
-                          }}
-                        >
-                          Guardar
-                        </Button>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          {match.is_finished && challengesCount[match.id] > 0 && (
+                            <Button variant="contained" size="small" color="warning" onClick={() => handleForceResolveChallenges(match.id)}>
+                              Resolver Retos
+                            </Button>
+                          )}
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            color="primary" 
+                            onClick={() => {
+                              updateMatch(match.id, { home_score: match.home_score, away_score: match.away_score });
+                              alert('Resultado guardado correctamente');
+                            }}
+                          >
+                            Guardar
+                          </Button>
+                        </Box>
                       </Box>
                     </Paper>
                   </motion.div>

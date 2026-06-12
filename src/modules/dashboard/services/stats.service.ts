@@ -45,6 +45,7 @@ export interface DashboardStats {
   elVeneno: { username: string; count: number } | null;
   gladiador: { username: string; count: number } | null;
   descocido: { username: string; count: number } | null;
+  derrochador: { username: string; amount: number } | null;
 
   // Rivalry
   rivalry: {
@@ -340,6 +341,22 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
   const descocidoRaw = findWinner(uid => arenaLossCounts[uid] || 0);
   const descocido = descocidoRaw && descocidoRaw.score > 0 ? { username: descocidoRaw.username, count: descocidoRaw.score } : null;
 
+  // --- DERROCHADOR (Más MessiCoins Gastados) ---
+  let maxExpense = 0;
+  let topSpenderUid: string | null = null;
+  Object.entries(globalSettings.user_expenses || {}).forEach(([uid, amount]) => {
+    if (amount > maxExpense) {
+      maxExpense = amount;
+      topSpenderUid = uid;
+    }
+  });
+  
+  let derrochador = null;
+  if (topSpenderUid && maxExpense > 0) {
+    const uname = leaderboard.find(l => l.userId === topSpenderUid)?.username || profilesData?.find(p => p.id === topSpenderUid)?.username || 'Desconocido';
+    derrochador = { username: uname, amount: maxExpense };
+  }
+
   // --- RIVALRY ---
   let rivalry = null;
   const maxLeaderboardPoints = leaderboard.length > 0 ? Math.max(...leaderboard.map(l => l.totalPoints)) : 0;
@@ -575,6 +592,7 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     elVeneno,
     gladiador,
     descocido,
+    derrochador,
     rivalry,
     podium,
     hardestMatch,

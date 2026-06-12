@@ -38,7 +38,9 @@ export const LeaderboardPage = () => {
       setLeaderboard(data);
       
       if (user) {
-        if (settings.user_unlocks?.[user.id]?.streaks) {
+        if (role === 'ADMIN') {
+          setUnlockedStreaks(true);
+        } else if (settings.user_unlocks?.[user.id]?.streaks) {
           if (Date.now() - settings.user_unlocks[user.id].streaks! < 172800000) { // 48 hours
             setUnlockedStreaks(true);
             setExpireTime(settings.user_unlocks[user.id].streaks! + 172800000);
@@ -75,17 +77,17 @@ export const LeaderboardPage = () => {
       }
     }
 
-    if (myCoins < 5) {
-      alert('¡No tienes suficientes MessiCoins! Cuesta 5 MC.');
+    if (myCoins < 10) {
+      alert('¡No tienes suficientes MessiCoins! Cuesta 10 MC.');
       return;
     }
     try {
       setBuyingStreaks(true);
-      await unlockFeature(user.id, 'streaks', 5);
+      await unlockFeature(user.id, 'streaks', 10);
       setUnlockedStreaks(true);
       setExpireTime(Date.now() + 172800000);
-      setMyCoins(prev => prev - 5);
-      setLeaderboard(leaderboard.map(l => l.userId === user.id ? { ...l, coins: l.coins - 5 } : l));
+      setMyCoins(prev => prev - 10);
+      setLeaderboard(leaderboard.map(l => l.userId === user.id ? { ...l, coins: l.coins - 10 } : l));
     } catch (e: any) {
       alert('Error al comprar: ' + e.message);
     } finally {
@@ -121,7 +123,7 @@ export const LeaderboardPage = () => {
             startIcon={buyingStreaks ? <CircularProgress size={16} color="inherit" /> : <LockIcon />} 
             sx={{ fontWeight: 800, borderRadius: 2 }}
           >
-            {buyingStreaks ? 'Procesando...' : 'Revelar Rachas (5 MC)'}
+            {buyingStreaks ? 'Procesando...' : 'Revelar Rachas (10 MC)'}
           </Button>
         )}
       </Box>
@@ -190,23 +192,21 @@ export const LeaderboardPage = () => {
                         {isMe ? `${user?.user_metadata?.username} (Tú)` : entry.username}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
-                        <Box sx={{ 
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5,
-                          filter: unlockedStreaks ? 'none' : 'blur(4px)',
-                          opacity: unlockedStreaks ? 1 : 0.6,
-                          pointerEvents: unlockedStreaks ? 'auto' : 'none',
-                          transition: 'all 0.3s ease'
-                        }}>
-                          {(entry.recentForm || []).map((status, i) => (
-                            <Tooltip key={i} title={status !== 'LOSS' ? 'Sumó puntos' : 'No sumó puntos'}>
-                              <Box sx={{ 
-                                width: 12, height: 12, borderRadius: '50%',
-                                bgcolor: status !== 'LOSS' ? '#00e676' : '#f44336',
-                                border: '1px solid rgba(0,0,0,0.5)',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                              }} />
-                            </Tooltip>
-                          ))}
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                          {unlockedStreaks ? (
+                            (entry.recentForm || []).map((status, i) => (
+                              <Tooltip key={i} title={status !== 'LOSS' ? 'Sumó puntos' : 'No sumó puntos'}>
+                                <Box sx={{ 
+                                  width: 12, height: 12, borderRadius: '50%',
+                                  bgcolor: status !== 'LOSS' ? '#00e676' : '#f44336',
+                                  border: '1px solid rgba(0,0,0,0.5)',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                                }} />
+                              </Tooltip>
+                            ))
+                          ) : (
+                            <Typography variant="caption" sx={{ color: 'text.disabled', opacity: 0.5 }}>---</Typography>
+                          )}
                         </Box>
                       </TableCell>
                       <TableCell sx={{ textAlign: 'right', fontWeight: 900, fontSize: { xs: '1rem', sm: '1.2rem' }, color: 'primary.main' }}>

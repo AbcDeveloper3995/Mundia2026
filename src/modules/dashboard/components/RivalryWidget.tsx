@@ -26,11 +26,15 @@ export const RivalryWidget = ({ stats, myUsername, updateMyCoins }: RivalryWidge
     const checkStatus = async () => {
       if (!user) return;
       try {
-        const settings = await fetchGlobalSettings();
-        const unlockTime = settings.user_unlocks?.[user.id]?.rivalry;
-        if (unlockTime && (Date.now() - unlockTime < 172800000)) { // 48 hours
+        if (role === 'ADMIN') {
           setUnlocked(true);
-          setExpireTime(unlockTime + 172800000);
+        } else {
+          const settings = await fetchGlobalSettings();
+          const unlockTime = settings.user_unlocks?.[user.id]?.rivalry;
+          if (unlockTime && (Date.now() - unlockTime < 172800000)) { // 48 hours
+            setUnlocked(true);
+            setExpireTime(unlockTime + 172800000);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -47,16 +51,16 @@ export const RivalryWidget = ({ stats, myUsername, updateMyCoins }: RivalryWidge
       alert('¡Debes guardar toda tu quiniela completa para acceder a tus MessiCoins!');
       return;
     }
-    if (stats.myCoins < 5) {
-      alert('¡No tienes suficientes MessiCoins! Cuesta 5 MC.');
+    if (stats.myCoins < 10) {
+      alert('¡No tienes suficientes MessiCoins! Cuesta 10 MC.');
       return;
     }
     try {
       setBuying(true);
-      await unlockFeature(user.id, 'rivalry', 5);
+      await unlockFeature(user.id, 'rivalry', 10);
       setUnlocked(true);
       setExpireTime(Date.now() + 172800000);
-      updateMyCoins(-5);
+      updateMyCoins(-10);
     } catch (e: any) {
       alert('Error al comprar: ' + e.message);
     } finally {
@@ -154,7 +158,7 @@ export const RivalryWidget = ({ stats, myUsername, updateMyCoins }: RivalryWidge
             startIcon={buying ? <CircularProgress size={20} color="inherit" /> : <LockIcon />} 
             sx={{ fontWeight: 900, px: 3, py: 1.5, borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', textTransform: 'uppercase' }}
           >
-            {buying ? 'Procesando...' : 'Revelar Rivalidad (5 MC)'}
+            {buying ? 'Procesando...' : 'Revelar Rivalidad (10 MC)'}
           </Button>
         </Box>
       )}

@@ -15,6 +15,7 @@ import { AdminProgressWidget } from '../components/AdminProgressWidget';
 import GavelIcon from '@mui/icons-material/Gavel';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import { fetchGlobalSettings, updateBannerMessage, spendUserCoins } from '../services/economy.service';
 import { CountdownTimer } from '../components/CountdownTimer';
@@ -74,20 +75,20 @@ export const DashboardPage = () => {
       alert('¡Debes guardar toda tu quiniela completa para acceder a tus MessiCoins!');
       return;
     }
-    if (stats.myCoins < 10) {
-      alert('¡No tienes suficientes MessiCoins! Cuesta 10 MC.');
+    if (stats.myCoins < 20) {
+      alert('¡No tienes suficientes MessiCoins! Cuesta 20 MC.');
       return;
     }
     if (!newBannerText.trim()) return;
 
     try {
       setBuying(true);
-      await spendUserCoins(user.id, 10);
-      const newExp = Date.now() + 86400000; // 24 hours
+      await spendUserCoins(user.id, 20);
+      const newExp = Date.now() + 43200000; // 12 hours
       await updateBannerMessage(newBannerText, newExp);
       setBannerMessage(newBannerText);
       setBannerExpiration(newExp);
-      setStats({ ...stats, myCoins: stats.myCoins - 10 });
+      setStats({ ...stats, myCoins: stats.myCoins - 20 });
       setHijackModalOpen(false);
       setNewBannerText('');
     } catch (e: any) {
@@ -101,6 +102,24 @@ export const DashboardPage = () => {
     <Box>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
 
+        {/* Controles del Banner */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, mb: 1 }}>
+          {bannerExpiration && Date.now() < bannerExpiration && (
+            <CountdownTimer targetDate={bannerExpiration} onExpire={() => setBannerExpiration(null)} />
+          )}
+          <Button
+            variant="outlined"
+            color="warning"
+            onClick={() => setHijackModalOpen(true)}
+            disabled={!!bannerExpiration && Date.now() < bannerExpiration}
+            startIcon={<NotificationsActiveIcon />}
+            size="small"
+            sx={{ borderRadius: 4, fontWeight: 800, textTransform: 'none' }}
+          >
+            Secuestrar Banner (20 MC)
+          </Button>
+        </Box>
+
         {/* Marquee Banner */}
         <Box sx={{
           width: '100%',
@@ -111,7 +130,6 @@ export const DashboardPage = () => {
           whiteSpace: 'nowrap',
           alignItems: 'center',
           boxShadow: '0 4px 20px rgba(211,47,47,0.4)',
-          position: 'relative'
         }}>
           <Typography variant="h6" sx={{
             fontWeight: 900,
@@ -126,23 +144,6 @@ export const DashboardPage = () => {
           }}>
             {bannerMessage}
           </Typography>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', gap: 1 }}>
-            {bannerExpiration && Date.now() < bannerExpiration && (
-              <Box sx={{ bgcolor: 'rgba(0,0,0,0.5)', borderRadius: 2, px: 1, py: 0.5 }}>
-                <CountdownTimer targetDate={bannerExpiration} onExpire={() => setBannerExpiration(null)} />
-              </Box>
-            )}
-            <Button
-              variant="contained"
-              color="warning"
-              onClick={() => setHijackModalOpen(true)}
-              disabled={!!bannerExpiration && Date.now() < bannerExpiration}
-              sx={{ minWidth: 0, p: 1, borderRadius: 2 }}
-            >
-              <CampaignIcon />
-            </Button>
-          </Box>
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 6 }}>
@@ -150,9 +151,6 @@ export const DashboardPage = () => {
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 800, mb: 0 }}>
                 Bienvenido, {user?.user_metadata?.username}
-              </Typography>
-              <Typography variant="h2" component="h1" color="text.secondary" sx={{ fontWeight: 400, mb: 0 }}>
-                <Box component="span" sx={{ color: 'primary.main', fontWeight: 600, ml: 1 }}>[{role || 'Participante'}]</Box>
               </Typography>
             </Box>
             {stats && (
@@ -341,14 +339,14 @@ export const DashboardPage = () => {
               if (stats) setStats({ ...stats, myCoins: stats.myCoins + amount });
             }} />
 
-            {/* 3. Comparaciones y Widgets (Solo Admins) */}
-            {role === 'ADMIN' && (
-              <Grid container spacing={4}>
-                <Grid size={{ xs: 12, lg: 12 }}  >
-                  <GlobalWidgets stats={stats} />
-                </Grid>
+            {/* 3. Comparaciones y Widgets */}
+            <Grid container spacing={4}>
+              <Grid size={{ xs: 12, lg: 12 }}  >
+                <GlobalWidgets stats={stats} updateMyCoins={(amount: number) => {
+                  if (stats) setStats({ ...stats, myCoins: stats.myCoins + amount });
+                }} />
               </Grid>
-            )}
+            </Grid>
           </Box>
         ) : null}
 
@@ -358,11 +356,11 @@ export const DashboardPage = () => {
 
       <Dialog open={hijackModalOpen} onClose={() => setHijackModalOpen(false)} sx={{ '& .MuiDialog-paper': { bgcolor: 'background.paper', borderRadius: 4, minWidth: { xs: 300, sm: 400 } } }}>
         <DialogTitle sx={{ fontWeight: 900, color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CampaignIcon /> Secuestrar Banner (10 MC)
+          <CampaignIcon /> Secuestrar Banner (20 MC)
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Paga 10 MessiCoins para reemplazar el mensaje global que verán todos los participantes en su Dashboard. ¡El banner será tuyo por 24 horas!
+            Costo: <strong style={{ color: '#00e676' }}>20 MessiCoins</strong>. Tu mensaje será visible para todos durante 12 horas.
           </Typography>
           <TextField
             autoFocus
@@ -380,7 +378,7 @@ export const DashboardPage = () => {
         <DialogActions sx={{ p: 3, pt: 0 }}>
           <Button onClick={() => setHijackModalOpen(false)} color="inherit" disabled={buying}>Cancelar</Button>
           <Button onClick={handleHijackBanner} variant="contained" color="warning" disabled={buying || !newBannerText.trim()} sx={{ fontWeight: 800 }}>
-            {buying ? 'Comprando...' : 'Pagar 10 MC'}
+            {buying ? 'Comprando...' : 'Pagar 20 MC'}
           </Button>
         </DialogActions>
       </Dialog>

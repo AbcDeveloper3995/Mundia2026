@@ -20,6 +20,7 @@ const trophyConfig = {
   elVeneno: { title: '🥶 El Veneno', desc: 'Peor racha sin puntos', color: '#00e5ff' },
   gladiador: { title: '⚔️ El Gladiador', desc: 'Más retos ganados en La Arena', color: '#ff5722' },
   descocido: { title: '🤕 El Descocido', desc: 'Más retos perdidos en La Arena', color: '#607d8b' },
+  derrochador: { title: '💸 El Derrochador', desc: 'Más MessiCoins gastados', color: '#e91e63' },
 };
 
 interface FunStatsProps {
@@ -38,11 +39,15 @@ export const FunStats = ({ stats, updateMyCoins }: FunStatsProps) => {
     const checkStatus = async () => {
       if (!user) return;
       try {
-        const settings = await fetchGlobalSettings();
-        const unlockTime = settings.user_unlocks?.[user.id]?.hof;
-        if (unlockTime && (Date.now() - unlockTime < 86400000)) { // 24 hours
+        if (role === 'ADMIN') {
           setUnlocked(true);
-          setExpireTime(unlockTime + 86400000);
+        } else {
+          const settings = await fetchGlobalSettings();
+          const unlockTime = settings.user_unlocks?.[user.id]?.hof;
+          if (unlockTime && (Date.now() - unlockTime < 86400000)) { // 24 hours
+            setUnlocked(true);
+            setExpireTime(unlockTime + 86400000);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -59,13 +64,13 @@ export const FunStats = ({ stats, updateMyCoins }: FunStatsProps) => {
       alert('¡Debes guardar toda tu quiniela completa para acceder a tus MessiCoins!');
       return;
     }
-    if (stats.myCoins < 10) {
-      alert('¡No tienes suficientes MessiCoins! Cuesta 10 MC.');
+    if (stats.myCoins < 20) {
+      alert('¡No tienes suficientes MessiCoins! Cuesta 20 MC.');
       return;
     }
     try {
       setBuying(true);
-      await unlockFeature(user.id, 'hof', 10);
+      await unlockFeature(user.id, 'hof', 20);
       setUnlocked(true);
       setExpireTime(Date.now() + 86400000);
       updateMyCoins(-10);
@@ -88,6 +93,7 @@ export const FunStats = ({ stats, updateMyCoins }: FunStatsProps) => {
     { key: 'elVeneno', data: stats.elVeneno, value: stats.elVeneno ? `${stats.elVeneno.count} partidos` : 'Nadie aún' },
     { key: 'gladiador', data: stats.gladiador, value: stats.gladiador ? `${stats.gladiador.count} victorias` : 'Nadie aún' },
     { key: 'descocido', data: stats.descocido, value: stats.descocido ? `${stats.descocido.count} derrotas` : 'Nadie aún' },
+    { key: 'derrochador', data: stats.derrochador, value: stats.derrochador ? `${stats.derrochador.amount} MC` : '0 MC' },
   ];
 
   return (
@@ -121,9 +127,13 @@ export const FunStats = ({ stats, updateMyCoins }: FunStatsProps) => {
                   flexDirection: 'column',
                   gap: 1
                 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: config.color }}>
-                    {config.title}
-                  </Typography>
+                  {card.key === 'derrochador' ? (
+                    <Typography sx={{ fontWeight: 800, color: '#f48fb1' }}>💸 Anda lleno</Typography>
+                  ) : (
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: config.color }}>
+                      {config.title}
+                    </Typography>
+                  )}
                   <Typography variant="caption" color="text.secondary">
                     {config.desc}
                   </Typography>
@@ -158,7 +168,7 @@ export const FunStats = ({ stats, updateMyCoins }: FunStatsProps) => {
             startIcon={buying ? <CircularProgress size={20} color="inherit" /> : <LockIcon />} 
             sx={{ fontWeight: 900, px: 4, py: 2, borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', textTransform: 'uppercase' }}
           >
-            {buying ? 'Procesando...' : 'Revelar Salón de la Fama (10 MC)'}
+            {buying ? 'Procesando...' : 'Desbloquear Salón de la Fama (20 MC)'}
           </Button>
         </Box>
       )}
