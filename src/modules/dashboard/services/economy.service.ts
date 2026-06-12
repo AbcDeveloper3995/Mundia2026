@@ -4,7 +4,7 @@ export interface GlobalSettings {
   banner_message: string;
   banner_expiration?: number;
   user_expenses: Record<string, number>;
-  user_unlocks: Record<string, { streaks?: number, hof?: number, rivalry?: number }>;
+  user_unlocks: Record<string, { streaks?: number, hof?: number, rivalry?: number, extreme_matches?: number }>;
 }
 
 export const fetchGlobalSettings = async (): Promise<GlobalSettings> => {
@@ -75,13 +75,13 @@ export const spendUserCoins = async (userId: string, amount: number) => {
   if (error) throw error;
 };
 
-export const unlockFeature = async (userId: string, feature: 'streaks' | 'hof' | 'rivalry', price: number) => {
+export const unlockFeature = async (userId: string, feature: 'streaks' | 'hof' | 'rivalry' | 'extreme_matches', price: number) => {
   // 1. Spend the coins
   await spendUserCoins(userId, price);
 
   // 2. Fetch current unlocks
   const { data } = await supabase.from('global_settings').select('value').eq('key', 'user_unlocks').maybeSingle();
-  let unlocks: Record<string, { streaks?: number, hof?: number, rivalry?: number }> = {};
+  let unlocks: Record<string, { streaks?: number, hof?: number, rivalry?: number, extreme_matches?: number }> = {};
   if (data && data.value) {
     try {
       unlocks = JSON.parse(data.value);
