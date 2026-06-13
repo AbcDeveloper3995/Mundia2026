@@ -9,7 +9,8 @@ import { useAuthStore } from '@/store/auth.store';
 import { motion } from 'framer-motion';
 
 export const PredictionsPage = () => {
-  const { user } = useAuthStore();
+  const { user, role } = useAuthStore();
+  const isSpecialUser = role === 'ADMIN' || user?.user_metadata?.username === 'SirRuben30' || user?.user_metadata?.username === 'Fabian';
   const [matches, setMatches] = useState<Match[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -42,7 +43,7 @@ export const PredictionsPage = () => {
       setPredictions(predsData);
       if (awardsData) {
         setAwards(awardsData);
-        if (awardsData.top_scorer || awardsData.top_assist || awardsData.mvp) {
+        if (!isSpecialUser && (awardsData.top_scorer || awardsData.top_assist || awardsData.mvp)) {
           setAwardsLocked(true);
         }
       }
@@ -119,10 +120,11 @@ export const PredictionsPage = () => {
   };
 
   const isQuinielaSaved = useMemo(() => {
+    if (isSpecialUser) return false;
     if (matches.length === 0) return false;
     const savedCount = predictions.filter(p => p.id && !p.id.startsWith('temp-')).length;
     return isSavedSession || savedCount === matches.length;
-  }, [matches, predictions, isSavedSession]);
+  }, [matches, predictions, isSavedSession, isSpecialUser]);
 
   const handleSaveAwards = async () => {
     try {
@@ -132,7 +134,9 @@ export const PredictionsPage = () => {
         mvp: awards.mvp || null
       });
       alert("¡Premios guardados correctamente!");
-      setAwardsLocked(true);
+      if (!isSpecialUser) {
+        setAwardsLocked(true);
+      }
     } catch (err: any) {
       alert("Error al guardar premios: " + err.message);
     }
