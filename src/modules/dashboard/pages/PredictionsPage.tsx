@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 
 export const PredictionsPage = () => {
   const { user, role } = useAuthStore();
-  const isSpecialUser = role === 'ADMIN' || user?.user_metadata?.username === 'SirRuben30' || user?.user_metadata?.username === 'Fabian';
+  const isSpecialUser = role === 'ADMIN' || user?.user_metadata?.username === 'SirRuben30' || user?.user_metadata?.username === 'Fabian' || user?.user_metadata?.username === 'miri' || user?.user_metadata?.username === 'Douglas' || user?.user_metadata?.username === 'douglas';
   const [matches, setMatches] = useState<Match[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);

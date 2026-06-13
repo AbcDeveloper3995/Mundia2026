@@ -203,7 +203,7 @@ export const DashboardPage = () => {
               </Typography>
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  {stats && (role === 'ADMIN' || stats.hasCompletedQuiniela || user?.user_metadata?.username === 'SirRuben30' || user?.user_metadata?.username === 'Fabian' || user?.user_metadata?.username === 'miri') ? (
+                  {stats && (role === 'ADMIN' || stats.hasCompletedQuiniela || user?.user_metadata?.username === 'SirRuben30' || user?.user_metadata?.username === 'Fabian' || user?.user_metadata?.username === 'miri' || user?.user_metadata?.username === 'Douglas' || user?.user_metadata?.username === 'douglas') ? (
                     <Button fullWidth component={RouterLink} to="/dashboard/predictions" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
                       Mis Predicciones
                     </Button>
