@@ -255,20 +255,25 @@ export const recalculateAllLeaderboards = async () => {
         }
 
         if (canEarnScorePoints) {
-          // Resultado exacto: 5 puntos
-          if (pred.predicted_home_score === realHomeScore && pred.predicted_away_score === realAwayScore) {
-            matchPoints += 5;
-            totalCoins += 50;
+          if (pred.predicted_home_score === null || pred.predicted_home_score === undefined || pred.predicted_home_score < 0 || pred.predicted_away_score === null || pred.predicted_away_score === undefined || pred.predicted_away_score < 0) {
+            // Fallo absoluto por no predecir: penalidad
+            totalCoins -= 10;
           } else {
-            // Ganador o empate correcto: 3 puntos
-            const actualWinner = realHomeScore > realAwayScore ? 'HOME' : realHomeScore < realAwayScore ? 'AWAY' : 'DRAW';
-            const predWinner = pred.predicted_home_score > pred.predicted_away_score ? 'HOME' : pred.predicted_home_score < pred.predicted_away_score ? 'AWAY' : 'DRAW';
-            if (actualWinner === predWinner) {
-              matchPoints += 3;
-              totalCoins += 20;
+            // Resultado exacto: 5 puntos
+            if (pred.predicted_home_score === realHomeScore && pred.predicted_away_score === realAwayScore) {
+              matchPoints += 5;
+              totalCoins += 50;
             } else {
-              // Fallo absoluto: penalidad
-              totalCoins -= 10;
+              // Ganador o empate correcto: 3 puntos
+              const actualWinner = realHomeScore > realAwayScore ? 'HOME' : realHomeScore < realAwayScore ? 'AWAY' : 'DRAW';
+              const predWinner = pred.predicted_home_score > pred.predicted_away_score ? 'HOME' : pred.predicted_home_score < pred.predicted_away_score ? 'AWAY' : 'DRAW';
+              if (actualWinner === predWinner) {
+                matchPoints += 3;
+                totalCoins += 20;
+              } else {
+                // Fallo absoluto: penalidad
+                totalCoins -= 10;
+              }
             }
           }
         }

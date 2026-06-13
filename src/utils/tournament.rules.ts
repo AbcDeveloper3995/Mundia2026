@@ -320,7 +320,7 @@ export const getPointsBreakdown = (
       }
     }
 
-    if (canEarnScorePoints) {
+    if (canEarnScorePoints && prediction.predicted_home_score !== undefined && prediction.predicted_home_score !== null && prediction.predicted_home_score >= 0 && prediction.predicted_away_score !== undefined && prediction.predicted_away_score !== null && prediction.predicted_away_score >= 0) {
       if (prediction.predicted_home_score === realHomeScore && prediction.predicted_away_score === realAwayScore) {
         addPoints(5, `Resultado exacto del partido`);
       } else {
