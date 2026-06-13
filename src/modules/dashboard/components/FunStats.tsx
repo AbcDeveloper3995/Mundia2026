@@ -80,7 +80,7 @@ export const FunStats = ({ stats, updateMyCoins }: FunStatsProps) => {
       setBuying(false);
     }
   };
-  const cards = [
+  let cards = [
     { key: 'nostradamus', data: stats.nostradamus, value: stats.nostradamus ? `${stats.nostradamus.count} exactos` : 'Nadie aún' },
     { key: 'suertudo', data: stats.suertudo, value: stats.suertudo ? `${stats.suertudo.count} aciertos` : 'Nadie aún' },
     { key: 'mufa', data: stats.mufa, value: stats.mufa ? `${stats.mufa.percentage}% efectividad` : 'Nadie aún' },
@@ -95,6 +95,10 @@ export const FunStats = ({ stats, updateMyCoins }: FunStatsProps) => {
     { key: 'descocido', data: stats.descocido, value: stats.descocido ? `${stats.descocido.count} derrotas` : 'Nadie aún' },
     { key: 'derrochador', data: stats.derrochador, value: stats.derrochador ? `${stats.derrochador.amount} MC` : '0 MC' },
   ];
+
+  if (role !== 'ADMIN') {
+    cards = cards.filter(c => c.key !== 'reyEliminatorias');
+  }
 
   return (
     <Box sx={{ mb: 6, position: 'relative' }}>

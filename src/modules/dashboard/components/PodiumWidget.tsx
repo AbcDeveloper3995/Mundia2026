@@ -57,7 +57,8 @@ export const PodiumWidget = ({ stats }: PodiumWidgetProps) => {
           const isFirst = idx === 0;
 
           return (
-            <motion.div
+            <Box
+              component={motion.div}
               key={p.userId}
               animate={isFirst ? {
                 scale: [1, 1.02, 1],
@@ -68,6 +69,7 @@ export const PodiumWidget = ({ stats }: PodiumWidgetProps) => {
                 repeat: Infinity,
                 ease: "easeInOut"
               } : {}}
+              sx={{ borderRadius: 2 }}
             >
               <Box sx={{ 
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, 
@@ -91,7 +93,7 @@ export const PodiumWidget = ({ stats }: PodiumWidgetProps) => {
                   {p.totalPoints}
                 </Typography>
               </Box>
-            </motion.div>
+            </Box>
           );
         })}
       </Box>
