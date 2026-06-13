@@ -289,7 +289,7 @@ export const PredictionsPage = () => {
                     maxLength={2}
                     value={hScore ?? ''}
                     onChange={(e) => handlePredictionChange(match.id, 'home', e.target.value)}
-                    disabled={isLocked || (!home && !away) || isQuinielaSaved}
+                    disabled={(!isSpecialUser && isLocked) || (!home && !away) || isQuinielaSaved}
                     style={{ width: '100%', height: '100%', background: 'transparent', border: 'none', color: 'white', textAlign: 'center', fontSize: '1.4rem', fontWeight: 900, outline: 'none' }}
                   />
                 </Box>
@@ -301,7 +301,7 @@ export const PredictionsPage = () => {
                     maxLength={2}
                     value={aScore ?? ''}
                     onChange={(e) => handlePredictionChange(match.id, 'away', e.target.value)}
-                    disabled={isLocked || (!home && !away) || isQuinielaSaved}
+                    disabled={(!isSpecialUser && isLocked) || (!home && !away) || isQuinielaSaved}
                     style={{ width: '100%', height: '100%', background: 'transparent', border: 'none', color: 'white', textAlign: 'center', fontSize: '1.4rem', fontWeight: 900, outline: 'none' }}
                   />
                 </Box>
@@ -315,7 +315,7 @@ export const PredictionsPage = () => {
               </Box>
             </Box>
 
-            {!isLocked && isKnockout && isTie && home && away && (
+            {(!isLocked || isSpecialUser) && isKnockout && isTie && home && away && (
               <Box sx={{ mb: 2, p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, textAlign: 'center' }}>
                 <Typography variant="caption" sx={{ color: 'warning.main', fontWeight: 800, mb: 1, display: 'block' }}>
                   Empate. ¿Quién gana en penales?
