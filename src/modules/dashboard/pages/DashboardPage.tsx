@@ -20,6 +20,7 @@ import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import { fetchGlobalSettings, updateBannerMessage, spendUserCoins } from '../services/economy.service';
 import { CountdownTimer } from '../components/CountdownTimer';
+import { supabase } from '@/services/supabase';
 
 export const DashboardPage = () => {
   const { user, role } = useAuthStore();
@@ -269,6 +270,15 @@ export const DashboardPage = () => {
                   </Button>
                   <Button component={RouterLink} to="/dashboard/matches" variant="contained" color="error" sx={{ fontWeight: 800 }}>
                     Motor de Partidos
+                  </Button>
+                  <Button onClick={async () => {
+                    await supabase.from('global_settings').upsert([
+                      { key: 'active_spies', value: '[]' },
+                      { key: 'spy_requests', value: '[]' }
+                    ]);
+                    alert('Mensajes de espionaje limpiados con éxito. Recarga la página para ver los cambios.');
+                  }} variant="contained" color="warning" sx={{ fontWeight: 800 }}>
+                    Limpiar Espionajes
                   </Button>
                 </Box>
               </Paper>
