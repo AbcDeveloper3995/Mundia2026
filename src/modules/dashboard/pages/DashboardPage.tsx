@@ -74,24 +74,13 @@ export const DashboardPage = () => {
 
   const handleHijackBanner = async () => {
     if (!user || !stats) return;
-    if (!stats.hasCompletedQuiniela && role !== 'ADMIN') {
-      alert('¡Debes guardar toda tu quiniela completa para acceder a tus MessiCoins!');
-      return;
-    }
-    if (stats.myCoins < 20) {
-      alert('¡No tienes suficientes MessiCoins! Cuesta 20 MC.');
-      return;
-    }
     if (!newBannerText.trim()) return;
 
     try {
       setBuying(true);
-      await spendUserCoins(user.id, 20);
-      const newExp = Date.now() + 43200000; // 12 hours
-      await updateBannerMessage(newBannerText, newExp);
+      await updateBannerMessage(newBannerText, 0);
       setBannerMessage(newBannerText);
-      setBannerExpiration(newExp);
-      setStats({ ...stats, myCoins: stats.myCoins - 20 });
+      setBannerExpiration(null);
       setHijackModalOpen(false);
       setNewBannerText('');
     } catch (e: any) {
@@ -108,19 +97,15 @@ export const DashboardPage = () => {
         {/* Controles del Banner */}
         {canSeeBanner && (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, mb: 1 }}>
-            {bannerExpiration && Date.now() < bannerExpiration && (
-              <CountdownTimer targetDate={bannerExpiration} onExpire={() => setBannerExpiration(null)} />
-            )}
             <Button
               variant="outlined"
               color="warning"
               onClick={() => setHijackModalOpen(true)}
-              disabled={!!bannerExpiration && Date.now() < bannerExpiration}
               startIcon={<NotificationsActiveIcon />}
               size="small"
               sx={{ borderRadius: 4, fontWeight: 800, textTransform: 'none' }}
             >
-              Secuestrar Banner (20 MC)
+              Actualizar Banner Global
             </Button>
           </Box>
         )}
@@ -381,12 +366,12 @@ export const DashboardPage = () => {
       <RulesModal open={rulesOpen} onClose={() => setRulesOpen(false)} />
 
       <Dialog open={hijackModalOpen} onClose={() => setHijackModalOpen(false)} sx={{ '& .MuiDialog-paper': { bgcolor: 'background.paper', borderRadius: 4, minWidth: { xs: 300, sm: 400 } } }}>
-        <DialogTitle sx={{ fontWeight: 900, color: 'warning.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CampaignIcon /> Secuestrar Banner (20 MC)
+        <DialogTitle sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1, color: 'warning.main' }}>
+          <CampaignIcon /> Enviar Mensaje Global
         </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Costo: <strong style={{ color: '#00e676' }}>20 MessiCoins</strong>. Tu mensaje será visible para todos durante 12 horas.
+        <DialogContent sx={{ pt: 2 }}>
+          <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+            Escribe un mensaje. Se mostrará en tiempo real a todos los usuarios en la marquesina superior.
           </Typography>
           <TextField
             autoFocus
@@ -404,7 +389,7 @@ export const DashboardPage = () => {
         <DialogActions sx={{ p: 3, pt: 0 }}>
           <Button onClick={() => setHijackModalOpen(false)} color="inherit" disabled={buying}>Cancelar</Button>
           <Button onClick={handleHijackBanner} variant="contained" color="warning" disabled={buying || !newBannerText.trim()} sx={{ fontWeight: 800 }}>
-            {buying ? 'Comprando...' : 'Pagar 20 MC'}
+            {buying ? 'Actualizando...' : 'Publicar Mensaje'}
           </Button>
         </DialogActions>
       </Dialog>
