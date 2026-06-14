@@ -61,7 +61,7 @@ export const LeaderboardPage = () => {
     let latestActivity = null;
     if (reqs.length > 0) {
       const sorted = [...reqs].sort((a, b) => b.timestamp - a.timestamp);
-      latestActivity = sorted.find(r => r.status !== 'pending') || null;
+      latestActivity = sorted.find(r => r.status === 'accepted' || r.status === 'rejected') || null;
     }
     setLatestSpyActivity(latestActivity);
   };
@@ -145,7 +145,7 @@ export const LeaderboardPage = () => {
     }
   };
 
-  const handleRespondSpy = async (reqId: string, status: 'accepted' | 'rejected') => {
+  const handleRespondSpy = async (reqId: string, status: 'accepted' | 'rejected' | 'expired') => {
     try {
       await respondSpyRequest(reqId, status);
       await loadData();
@@ -369,8 +369,16 @@ export const LeaderboardPage = () => {
       )}
 
       <Dialog open={myPendingRequests.length > 0} maxWidth="xs" fullWidth sx={{ '& .MuiDialog-paper': { bgcolor: '#1a1a1a', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)' } }}>
-        <DialogTitle sx={{ fontWeight: 900, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)', pb: 2 }}>
-          Petición de Espionaje
+        <DialogTitle sx={{ fontWeight: 900, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)', pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Petición de Espionaje</span>
+          {myPendingRequests[0]?.expiresAt && (
+            <Box sx={{ ml: 2, scale: '0.8', transformOrigin: 'right center' }}>
+              <CountdownTimer 
+                targetDate={myPendingRequests[0].expiresAt} 
+                onExpire={() => handleRespondSpy(myPendingRequests[0].id, 'expired')} 
+              />
+            </Box>
+          )}
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           <Typography variant="body1" sx={{ color: 'text.primary' }}>

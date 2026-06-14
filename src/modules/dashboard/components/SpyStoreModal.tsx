@@ -37,7 +37,11 @@ export const SpyStoreModal = ({ open, onClose, targetId, targetName, userId, use
   const [viewingTier, setViewingTier] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) loadActiveSpies();
+    if (open) {
+      loadActiveSpies();
+      const interval = setInterval(loadActiveSpies, 10000);
+      return () => clearInterval(interval);
+    }
   }, [open]);
 
   const loadActiveSpies = async () => {

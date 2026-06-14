@@ -7,9 +7,12 @@ export interface SpyRequest {
   targetId: string;
   targetName: string;
   tierId: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: 'pending' | 'accepted' | 'rejected' | 'expired';
   timestamp: number;
+  expiresAt?: number;
 }
+
+export const ADMIN_USERNAMES = ['anthuan', 'änthuan', 'SirRuben30', 'miri', 'admin', 'Admin'];
 
 export interface GlobalSettings {
   banner_message: string;
@@ -72,7 +75,19 @@ export const fetchGlobalSettings = async (): Promise<GlobalSettings> => {
     }
     if (row.key === 'spy_requests') {
       try {
-        settings.spy_requests = JSON.parse(row.value);
+        const parsed = JSON.parse(row.value);
+        let changed = false;
+        settings.spy_requests = parsed.map((req: any) => {
+          if (req.status === 'pending' && !req.expiresAt && ADMIN_USERNAMES.includes(req.targetName)) {
+            changed = true;
+            return { ...req, expiresAt: Date.now() + 5 * 60 * 1000 };
+          }
+          return req;
+        });
+        if (changed) {
+          // Asynchronously save back to DB so existing ones get the timestamp permanently
+          supabase.from('global_settings').upsert({ key: 'spy_requests', value: JSON.stringify(settings.spy_requests) }).then();
+        }
       } catch (e) {
         settings.spy_requests = [];
       }
@@ -197,6 +212,8 @@ export const requestSpy = async (requesterId: string, requesterName: string, tar
     throw new Error('Ya enviaste una petición. Espera a que responda.');
   }
 
+  const isAdmin = ADMIN_USERNAMES.includes(targetName);
+
   spyRequests.push({
     id: Math.random().toString(36).substring(2, 15),
     requesterId,
@@ -205,13 +222,14 @@ export const requestSpy = async (requesterId: string, requesterName: string, tar
     targetName,
     tierId,
     status: 'pending',
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    ...(isAdmin ? { expiresAt: Date.now() + 5 * 60 * 1000 } : {})
   });
 
   await supabase.from('global_settings').upsert({ key: 'spy_requests', value: JSON.stringify(spyRequests) });
 };
 
-export const respondSpyRequest = async (requestId: string, status: 'accepted' | 'rejected') => {
+export const respondSpyRequest = async (requestId: string, status: 'accepted' | 'rejected' | 'expired') => {
   const settings = await fetchGlobalSettings();
   let spyRequests = settings.spy_requests || [];
   
