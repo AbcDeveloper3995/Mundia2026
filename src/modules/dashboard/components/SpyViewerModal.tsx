@@ -38,8 +38,24 @@ export const SpyViewerModal = ({ open, onClose, targetId, targetName, tierId }: 
       let filteredMatches = [...matchesData];
 
       if (tierId === 'recent') {
+        const STAGE_ORDER: Record<string, number> = { 'GROUP': 0, 'R32': 1, 'R16': 2, 'QF': 3, 'SF': 4, 'THIRD_PLACE': 5, 'FINAL': 6 };
         const finished = matchesData.filter(m => m.is_finished).sort((a, b) => {
-          return new Date(b.match_date || 0).getTime() - new Date(a.match_date || 0).getTime();
+          const dateA = a.match_date ? new Date(a.match_date).getTime() : 0;
+          const dateB = b.match_date ? new Date(b.match_date).getTime() : 0;
+          if (dateA > 0 && dateB > 0 && dateA !== dateB) return dateB - dateA;
+
+          const stageA = STAGE_ORDER[a.stage] || 0;
+          const stageB = STAGE_ORDER[b.stage] || 0;
+          if (stageA !== stageB) return stageB - stageA;
+
+          if (a.stage === 'GROUP') {
+             const teamA = a.home_team_id ? teamsData.find(t => t.id === a.home_team_id) : null;
+             const teamB = b.home_team_id ? teamsData.find(t => t.id === b.home_team_id) : null;
+             const groupA = teamA?.group?.name || '';
+             const groupB = teamB?.group?.name || '';
+             if (groupA !== groupB) return groupB.localeCompare(groupA);
+          }
+          return 0;
         });
         filteredMatches = finished.slice(0, 2);
       } else if (tierId === 'groups') {
