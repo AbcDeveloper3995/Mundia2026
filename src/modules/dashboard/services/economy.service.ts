@@ -1,5 +1,16 @@
 import { supabase } from '@/services/supabase';
 
+export interface SpyRequest {
+  id: string;
+  requesterId: string;
+  requesterName: string;
+  targetId: string;
+  targetName: string;
+  tierId: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  timestamp: number;
+}
+
 export interface GlobalSettings {
   banner_message: string;
   banner_expiration?: number;
@@ -9,9 +20,10 @@ export interface GlobalSettings {
     hof?: number, 
     rivalry?: number, 
     extreme_matches?: number,
-    spies?: Record<string, { recent?: number, groups?: number, knockouts?: number, awards?: number }>
+    spies?: Record<string, { recent?: number | boolean, groups?: number | boolean, knockouts?: number | boolean, awards?: number | boolean }>
   }>;
   active_spies?: { targetId: string, targetName: string, expiresAt: number }[];
+  spy_requests?: SpyRequest[];
 }
 
 export const fetchGlobalSettings = async (): Promise<GlobalSettings> => {
@@ -21,7 +33,8 @@ export const fetchGlobalSettings = async (): Promise<GlobalSettings> => {
     banner_message: '📢 ¿Quieres que todos lean tu mensaje? Haz clic en la bocina de la derecha para secuestrar este banner por 5 MC.',
     user_expenses: {},
     user_unlocks: {},
-    active_spies: []
+    active_spies: [],
+    spy_requests: []
   };
 
   // If table doesn't exist yet or has an error, fail gracefully to defaults
@@ -55,6 +68,13 @@ export const fetchGlobalSettings = async (): Promise<GlobalSettings> => {
         settings.active_spies = JSON.parse(row.value);
       } catch (e) {
         settings.active_spies = [];
+      }
+    }
+    if (row.key === 'spy_requests') {
+      try {
+        settings.spy_requests = JSON.parse(row.value);
+      } catch (e) {
+        settings.spy_requests = [];
       }
     }
   });
@@ -126,15 +146,9 @@ export const unlockFeature = async (userId: string, feature: 'streaks' | 'hof' |
 };
 
 export const unlockSpy = async (userId: string, targetId: string, targetName: string, tier: 'recent' | 'groups' | 'knockouts' | 'awards', price: number) => {
-  // 1. Fetch current expenses to validate they have spent >= 100 MC (excluding this purchase)
   const settings = await fetchGlobalSettings();
-  const pastExpenses = settings.user_expenses[userId] || 0;
-  
-  if (price > 0 && pastExpenses < 100) {
-    throw new Error('Debes haber gastado al menos 100 MC previamente en el torneo para poder espiar a alguien.');
-  }
 
-  // 2. Spend the coins for the spy feature
+  // 1. Spend the coins for the spy feature
   if (price > 0) {
     await spendUserCoins(userId, price);
   }
@@ -149,6 +163,7 @@ export const unlockSpy = async (userId: string, targetId: string, targetName: st
   const expirationTime = Date.now() + 300000;
   unlocks[userId].spies![targetId][tier] = expirationTime;
 
+  // Note: triggerSpyAlert and unlockSpy remain for backward compatibility or direct triggers
   // 4. Update active_spies (Global Panic Badge)
   let activeSpies = settings.active_spies || [];
   // Clean expired spies
@@ -167,4 +182,70 @@ export const unlockSpy = async (userId: string, targetId: string, targetName: st
     { key: 'user_unlocks', value: JSON.stringify(unlocks) },
     { key: 'active_spies', value: JSON.stringify(activeSpies) }
   ]);
+};
+
+export const requestSpy = async (requesterId: string, requesterName: string, targetId: string, targetName: string, tierId: string) => {
+  const settings = await fetchGlobalSettings();
+  let spyRequests = settings.spy_requests || [];
+  
+  // Clean up very old requests (e.g. > 1 day) to prevent bloat
+  spyRequests = spyRequests.filter(req => Date.now() - req.timestamp < 86400000);
+
+  // Check if there is already a pending request for this user to this target for this tier
+  const existing = spyRequests.find(req => req.requesterId === requesterId && req.targetId === targetId && req.tierId === tierId && req.status === 'pending');
+  if (existing) {
+    throw new Error('Ya enviaste una petición. Espera a que responda.');
+  }
+
+  spyRequests.push({
+    id: Math.random().toString(36).substring(2, 15),
+    requesterId,
+    requesterName,
+    targetId,
+    targetName,
+    tierId,
+    status: 'pending',
+    timestamp: Date.now()
+  });
+
+  await supabase.from('global_settings').upsert({ key: 'spy_requests', value: JSON.stringify(spyRequests) });
+};
+
+export const respondSpyRequest = async (requestId: string, status: 'accepted' | 'rejected') => {
+  const settings = await fetchGlobalSettings();
+  let spyRequests = settings.spy_requests || [];
+  
+  const reqIndex = spyRequests.findIndex(req => req.id === requestId);
+  if (reqIndex === -1) throw new Error('Petición no encontrada');
+
+  const req = spyRequests[reqIndex];
+  req.status = status;
+  req.timestamp = Date.now(); // update timestamp so the banner triggers now
+
+  const updates: any[] = [
+    { key: 'spy_requests', value: JSON.stringify(spyRequests) }
+  ];
+
+  if (status === 'accepted') {
+    let unlocks = settings.user_unlocks;
+    if (!unlocks[req.requesterId]) unlocks[req.requesterId] = {};
+    if (!unlocks[req.requesterId].spies) unlocks[req.requesterId].spies = {};
+    if (!unlocks[req.requesterId].spies![req.targetId]) unlocks[req.requesterId].spies![req.targetId] = {};
+    
+    // Set to true for permanent (until consumed)
+    unlocks[req.requesterId].spies![req.targetId][req.tierId as any] = true;
+    updates.push({ key: 'user_unlocks', value: JSON.stringify(unlocks) });
+  }
+
+  await supabase.from('global_settings').upsert(updates);
+};
+
+export const consumeSpyAccess = async (userId: string, targetId: string, tierId: string) => {
+  const settings = await fetchGlobalSettings();
+  let unlocks = settings.user_unlocks;
+
+  if (unlocks[userId]?.spies?.[targetId]?.[tierId as any]) {
+    unlocks[userId].spies![targetId][tierId as any] = false; // consume it
+    await supabase.from('global_settings').upsert({ key: 'user_unlocks', value: JSON.stringify(unlocks) });
+  }
 };

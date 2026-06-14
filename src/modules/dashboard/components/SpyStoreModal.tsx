@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, Box, Typography, Button, CircularProgress, Paper, IconButton } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import LockIcon from '@mui/icons-material/Lock';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CloseIcon from '@mui/icons-material/Close';
-import { fetchGlobalSettings, unlockSpy, triggerSpyAlert } from '../services/economy.service';
+import { fetchGlobalSettings, requestSpy, consumeSpyAccess } from '../services/economy.service';
 import { useAuthStore } from '@/store/auth.store';
 import { SpyViewerModal } from './SpyViewerModal';
-import { CountdownTimer } from './CountdownTimer';
 
 interface SpyStoreModalProps {
   open: boolean;
@@ -27,12 +24,14 @@ const TIERS = [
 ] as const;
 
 export const SpyStoreModal = ({ open, onClose, targetId, targetName, userId, userCoins, onSpend }: SpyStoreModalProps) => {
-  const { role } = useAuthStore();
-  const isAdmin = role === 'ADMIN';
+  const { role, user } = useAuthStore();
+  const isAdmin = role === 'ADMIN' || ['anthuan', 'änthuan', 'SirRuben30', 'miri', 'admin', 'Admin'].includes(user?.user_metadata?.username);
   
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
-  const [activeTiers, setActiveTiers] = useState<Record<string, number>>({});
+  const [activeTiers, setActiveTiers] = useState<Record<string, any>>({});
+  const [pendingRequests, setPendingRequests] = useState<Record<string, boolean>>({});
+  const [acceptedRequests, setAcceptedRequests] = useState<Record<string, boolean>>({});
   
   // State for the viewer
   const [viewingTier, setViewingTier] = useState<string | null>(null);
@@ -47,6 +46,19 @@ export const SpyStoreModal = ({ open, onClose, targetId, targetName, userId, use
       const settings = await fetchGlobalSettings();
       const userUnlocks = settings.user_unlocks[userId]?.spies?.[targetId] || {};
       setActiveTiers(userUnlocks);
+
+      const reqs = settings.spy_requests || [];
+      const pending: Record<string, boolean> = {};
+      const accepted: Record<string, boolean> = {};
+      
+      reqs.forEach(req => {
+        if (req.requesterId === userId && req.targetId === targetId) {
+          if (req.status === 'pending') pending[req.tierId] = true;
+          if (req.status === 'accepted') accepted[req.tierId] = true;
+        }
+      });
+      setPendingRequests(pending);
+      setAcceptedRequests(accepted);
     } catch (e) {
       console.error(e);
     } finally {
@@ -54,37 +66,20 @@ export const SpyStoreModal = ({ open, onClose, targetId, targetName, userId, use
     }
   };
 
-  const handlePurchase = async (tierId: 'recent' | 'groups' | 'knockouts' | 'awards', price: number) => {
-    if (userCoins < price && !isAdmin) {
-      alert(`No tienes suficientes MessiCoins. Necesitas ${price} MC.`);
-      return;
-    }
-
-    try {
-      setPurchasing(tierId);
-      if (!isAdmin) {
-        await unlockSpy(userId, targetId, targetName, tierId, price);
-        onSpend(price);
-      }
-      // Update local state to reflect purchase (5 minutes)
-      setActiveTiers(prev => ({ ...prev, [tierId]: isAdmin ? Date.now() + 86400000 : Date.now() + 300000 }));
-    } catch (e: any) {
-      alert(e.message);
-    } finally {
-      setPurchasing(null);
-    }
-  };
-
   const handleView = async (tierId: string) => {
-    if (isAdmin) {
+    if (activeTiers[tierId] === true || acceptedRequests[tierId]) {
+      setViewingTier(tierId);
+    } else {
       try {
-        await unlockSpy(userId, targetId, targetName, tierId as any, 0);
-        setActiveTiers(prev => ({ ...prev, [tierId]: Date.now() + 300000 }));
-      } catch(e) {
-        console.error(e);
+        setPurchasing(tierId);
+        await requestSpy(userId, user?.user_metadata?.username || 'Usuario', targetId, targetName, tierId);
+        setPendingRequests(prev => ({ ...prev, [tierId]: true }));
+      } catch (e: any) {
+        alert(e.message);
+      } finally {
+        setPurchasing(null);
       }
     }
-    setViewingTier(tierId);
   };
 
   return (
@@ -110,14 +105,14 @@ export const SpyStoreModal = ({ open, onClose, targetId, targetName, userId, use
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {TIERS.map(tier => {
-                const expiration = activeTiers[tier.id];
-                const isActive = isAdmin || (expiration && expiration > Date.now());
+                const isPending = pendingRequests[tier.id];
+                const hasAccess = activeTiers[tier.id] === true || acceptedRequests[tier.id];
 
                 return (
-                  <Paper key={tier.id} sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid', borderColor: isActive ? 'primary.main' : 'rgba(255,255,255,0.05)', borderRadius: 3, transition: 'all 0.2s', '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' } }}>
+                  <Paper key={tier.id} sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid', borderColor: hasAccess ? 'primary.main' : 'rgba(255,255,255,0.05)', borderRadius: 3, transition: 'all 0.2s', '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' } }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Box sx={{ flex: 1 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1, color: isActive ? 'primary.main' : 'text.primary' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1, color: hasAccess ? 'primary.main' : 'text.primary' }}>
                           {tier.icon} {tier.title}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
@@ -126,37 +121,17 @@ export const SpyStoreModal = ({ open, onClose, targetId, targetName, userId, use
                       </Box>
                       
                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, minWidth: 120 }}>
-                        {isActive ? (
-                          <>
-                            <Button 
-                              variant="contained" 
-                              color="primary" 
-                              size="small" 
-                              onClick={() => handleView(tier.id)}
-                              startIcon={<VisibilityIcon />}
-                              sx={{ fontWeight: 800, borderRadius: 2, width: '100%' }}
-                            >
-                              VER AHORA
-                            </Button>
-                            {expiration && expiration > Date.now() && (
-                              <Typography variant="caption" color="error.main" sx={{ fontWeight: 800 }}>
-                                <CountdownTimer targetDate={expiration} onExpire={() => loadActiveSpies()} />
-                              </Typography>
-                            )}
-                          </>
-                        ) : (
-                          <Button 
-                            variant="outlined" 
-                            color="inherit" 
-                            size="small" 
-                            onClick={() => handlePurchase(tier.id as any, tier.price)}
-                            disabled={purchasing === tier.id}
-                            startIcon={purchasing === tier.id ? <CircularProgress size={14} color="inherit" /> : <LockIcon />}
-                            sx={{ fontWeight: 800, borderRadius: 2, width: '100%', borderColor: 'rgba(255,255,255,0.2)' }}
-                          >
-                            {tier.price} MC
-                          </Button>
-                        )}
+                        <Button 
+                          variant={hasAccess ? "contained" : "outlined"} 
+                          color={hasAccess ? "primary" : "inherit"} 
+                          size="small" 
+                          onClick={() => handleView(tier.id)}
+                          disabled={isPending || purchasing === tier.id}
+                          startIcon={purchasing === tier.id ? <CircularProgress size={14} color="inherit" /> : <VisibilityIcon />}
+                          sx={{ fontWeight: 800, borderRadius: 2, width: '100%', borderColor: hasAccess ? 'transparent' : 'rgba(255,255,255,0.2)' }}
+                        >
+                          {hasAccess ? 'VER AHORA' : isPending ? 'ESPERANDO...' : 'VER AHORA'}
+                        </Button>
                       </Box>
                     </Box>
                   </Paper>
@@ -170,7 +145,11 @@ export const SpyStoreModal = ({ open, onClose, targetId, targetName, userId, use
       {viewingTier && (
         <SpyViewerModal 
           open={!!viewingTier} 
-          onClose={() => setViewingTier(null)} 
+          onClose={async () => {
+            setViewingTier(null);
+            await consumeSpyAccess(userId, targetId, viewingTier);
+            loadActiveSpies();
+          }} 
           targetId={targetId} 
           targetName={targetName} 
           tierId={viewingTier as any} 

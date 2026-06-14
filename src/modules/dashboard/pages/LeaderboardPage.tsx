@@ -11,9 +11,11 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import LockIcon from '@mui/icons-material/Lock';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WarningIcon from '@mui/icons-material/Warning';
-import { fetchGlobalSettings, unlockFeature } from '../services/economy.service';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { fetchGlobalSettings, unlockFeature, respondSpyRequest, type SpyRequest } from '../services/economy.service';
 import { CountdownTimer } from '../components/CountdownTimer';
 import { SpyStoreModal } from '../components/SpyStoreModal';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 export const LeaderboardPage = () => {
   const { user, role } = useAuthStore();
@@ -30,6 +32,8 @@ export const LeaderboardPage = () => {
   const [myExpenses, setMyExpenses] = useState<number>(0);
   
   const [activeSpies, setActiveSpies] = useState<{ targetId: string, targetName: string, expiresAt: number }[]>([]);
+  const [latestSpyActivity, setLatestSpyActivity] = useState<SpyRequest | null>(null);
+  const [myPendingRequests, setMyPendingRequests] = useState<SpyRequest[]>([]);
   const [targetSpyUser, setTargetSpyUser] = useState<{ id: string, name: string } | null>(null);
 
   useEffect(() => {
@@ -42,9 +46,24 @@ export const LeaderboardPage = () => {
   const pollActiveSpies = async () => {
     try {
       const settings = await fetchGlobalSettings();
+      // Keep backward compatibility for other spies just in case
       const validSpies = (settings.active_spies || []).filter(s => s.expiresAt > Date.now());
       setActiveSpies(validSpies);
+
+      updateSpyRequestsState(settings.spy_requests || []);
     } catch(e) {}
+  };
+
+  const updateSpyRequestsState = (reqs: SpyRequest[]) => {
+    const myPending = reqs.filter(r => r.targetId === user?.id && r.status === 'pending');
+    setMyPendingRequests(myPending);
+
+    let latestActivity = null;
+    if (reqs.length > 0) {
+      const sorted = [...reqs].sort((a, b) => b.timestamp - a.timestamp);
+      latestActivity = sorted.find(r => r.status !== 'pending') || null;
+    }
+    setLatestSpyActivity(latestActivity);
   };
 
   const loadData = async () => {
@@ -58,6 +77,8 @@ export const LeaderboardPage = () => {
       
       const validSpies = (settings.active_spies || []).filter(s => s.expiresAt > Date.now());
       setActiveSpies(validSpies);
+      
+      updateSpyRequestsState(settings.spy_requests || []);
       
       if (user) {
         setUserUnlocks(settings.user_unlocks?.[user.id] || {});
@@ -124,6 +145,15 @@ export const LeaderboardPage = () => {
     }
   };
 
+  const handleRespondSpy = async (reqId: string, status: 'accepted' | 'rejected') => {
+    try {
+      await respondSpyRequest(reqId, status);
+      await loadData();
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress color="primary" /></Box>;
 
   return (
@@ -140,43 +170,31 @@ export const LeaderboardPage = () => {
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
       <AnimatePresence>
-        {activeSpies.length > 0 && (
+        {latestSpyActivity && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ marginBottom: 16 }}>
             <Paper sx={{ 
               p: 2, 
-              bgcolor: 'rgba(211, 47, 47, 0.1)', 
+              bgcolor: latestSpyActivity.status === 'accepted' ? 'rgba(0, 230, 118, 0.1)' : 'rgba(211, 47, 47, 0.1)', 
               border: '1px solid', 
-              borderColor: 'error.main', 
+              borderColor: latestSpyActivity.status === 'accepted' ? '#00e676' : 'error.main', 
               borderRadius: 3, 
               display: 'flex', 
               alignItems: 'center', 
-              gap: 2,
-              animation: 'pulse 2s infinite'
+              gap: 2
             }}>
-              <WarningIcon color="error" sx={{ fontSize: 32 }} />
+              {latestSpyActivity.status === 'accepted' ? <CheckCircleIcon sx={{ fontSize: 32, color: '#00e676' }} /> : <WarningIcon color="error" sx={{ fontSize: 32 }} />}
               <Box>
-                <Typography variant="subtitle2" color="error" sx={{ fontWeight: 900, textTransform: 'uppercase' }}>
-                  ¡ALERTA DE SEGURIDAD!
+                <Typography variant="subtitle2" sx={{ fontWeight: 900, textTransform: 'uppercase', color: latestSpyActivity.status === 'accepted' ? '#00e676' : 'error.main' }}>
+                  {latestSpyActivity.status === 'accepted' ? '¡ALERTA CHISMOSA!' : '¡INTENTO FALLIDO!'}
                 </Typography>
-                <Typography variant="body2" color="error.light" sx={{ fontWeight: 600, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  {activeSpies.map(spy => (
-                    <Box key={spy.targetId} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      • La quiniela de {spy.targetName} está siendo espiada.
-                      <Typography component="span" variant="caption" sx={{ fontWeight: 900, color: '#fff', bgcolor: 'error.dark', px: 1, py: 0.2, borderRadius: 1, lineHeight: 1 }}>
-                        <CountdownTimer targetDate={spy.expiresAt} onExpire={() => pollActiveSpies()} />
-                      </Typography>
-                    </Box>
-                  ))}
+                <Typography variant="body2" sx={{ fontWeight: 600, color: latestSpyActivity.status === 'accepted' ? '#00e676' : 'error.light' }}>
+                  {latestSpyActivity.status === 'accepted' 
+                    ? `El presidente del CDR ${latestSpyActivity.requesterName} chismosio a ${latestSpyActivity.targetName}..tacto`
+                    : `${latestSpyActivity.requesterName} intentó espiar a ${latestSpyActivity.targetName} y le dieron bajanda`
+                  }
                 </Typography>
               </Box>
             </Paper>
-            <style>{`
-              @keyframes pulse {
-                0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.4); }
-                70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
-              }
-            `}</style>
           </motion.div>
         )}
       </AnimatePresence>
@@ -278,10 +296,6 @@ export const LeaderboardPage = () => {
                                     size="small" 
                                     disabled={isSpyDisabled}
                                     onClick={() => {
-                                      if (role !== 'ADMIN' && myExpenses < 100) {
-                                        alert('🔒 ACCESO DENEGADO: Solo los inversores activos pueden usar el Espía. Debes haber gastado al menos 100 MC en el juego para desbloquear esta función.');
-                                        return;
-                                      }
                                       setTargetSpyUser({ id: entry.userId, name: entry.username });
                                     }} 
                                     sx={{ 
@@ -353,6 +367,25 @@ export const LeaderboardPage = () => {
           }}
         />
       )}
+
+      <Dialog open={myPendingRequests.length > 0} maxWidth="xs" fullWidth sx={{ '& .MuiDialog-paper': { bgcolor: '#1a1a1a', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)' } }}>
+        <DialogTitle sx={{ fontWeight: 900, color: 'primary.main', borderBottom: '1px solid rgba(255,255,255,0.05)', pb: 2 }}>
+          Petición de Espionaje
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Typography variant="body1" sx={{ color: 'text.primary' }}>
+            <Box component="span" sx={{ fontWeight: 800, color: 'primary.main' }}>{myPendingRequests[0]?.requesterName}</Box> ha solicitado espiar tu quiniela. ¿Qué decides?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button color="error" variant="outlined" onClick={() => handleRespondSpy(myPendingRequests[0].id, 'rejected')} sx={{ fontWeight: 800, borderRadius: 2 }}>
+            Darle Bajanda
+          </Button>
+          <Button color="primary" variant="contained" onClick={() => handleRespondSpy(myPendingRequests[0].id, 'accepted')} sx={{ fontWeight: 800, borderRadius: 2 }}>
+            Dejar que Chismosee
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
