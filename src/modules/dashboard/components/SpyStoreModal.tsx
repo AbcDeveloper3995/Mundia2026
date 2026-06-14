@@ -17,7 +17,7 @@ interface SpyStoreModalProps {
 }
 
 const TIERS = [
-  { id: 'recent', title: 'Últimos 2 Partidos', price: 300, icon: '💎', desc: 'Descubre de dónde sacó puntos recientemente.' },
+  { id: 'recent', title: 'Último Partido', price: 300, icon: '💎', desc: 'Descubre de dónde sacó puntos recientemente.' },
   { id: 'groups', title: 'Fase de Grupos', price: 400, icon: '💎', desc: 'Toda su estrategia de la fase inicial al descubierto.' },
   { id: 'knockouts', title: 'Fase Eliminatoria', price: 500, icon: '💎', desc: 'La llave completa. El secreto mejor guardado.' },
   { id: 'awards', title: 'Premios del Torneo', price: 350, icon: '💎', desc: 'Su apuesta a Goleador, MVP y Campeón.' }

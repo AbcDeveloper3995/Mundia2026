@@ -57,7 +57,7 @@ export const SpyViewerModal = ({ open, onClose, targetId, targetName, tierId }: 
           }
           return 0;
         });
-        filteredMatches = finished.slice(0, 2);
+        filteredMatches = finished.slice(0, 1);
       } else if (tierId === 'groups') {
         filteredMatches = matchesData.filter(m => m.stage === 'GROUP');
       } else if (tierId === 'knockouts') {
@@ -167,7 +167,7 @@ export const SpyViewerModal = ({ open, onClose, targetId, targetName, tierId }: 
         ) : (
           <Box>
             <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, color: 'text.secondary' }}>
-              {tierId === 'recent' && 'Últimos 2 Partidos'}
+              {tierId === 'recent' && 'Último Partido'}
               {tierId === 'groups' && 'Fase de Grupos'}
               {tierId === 'knockouts' && 'Fase Eliminatoria'}
               {tierId === 'awards' && 'Premios del Torneo'}
