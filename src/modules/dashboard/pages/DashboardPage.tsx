@@ -12,6 +12,7 @@ import { GlobalWidgets } from '../components/GlobalWidgets';
 import { PodiumWidget } from '../components/PodiumWidget';
 import { RulesModal } from '../components/RulesModal';
 import { AdminProgressWidget } from '../components/AdminProgressWidget';
+import { AdminPodiumDetailsWidget } from '../components/AdminPodiumDetailsWidget';
 import GavelIcon from '@mui/icons-material/Gavel';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import CampaignIcon from '@mui/icons-material/Campaign';
@@ -208,7 +209,7 @@ export const DashboardPage = () => {
               </Typography>
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  {stats && (role === 'ADMIN' || stats.hasCompletedQuiniela || user?.user_metadata?.username === 'SirRuben30' || user?.user_metadata?.username === 'Fabian' || user?.user_metadata?.username === 'miri' || user?.user_metadata?.username === 'Douglas' || user?.user_metadata?.username === 'douglas') ? (
+                  {stats && (role === 'ADMIN' || stats.hasCompletedQuiniela || user?.user_metadata?.username === 'Douglas' || user?.user_metadata?.username === 'douglas') ? (
                     <Button fullWidth component={RouterLink} to="/dashboard/predictions" variant="contained" color="primary" sx={{ fontWeight: 800 }}>
                       Mis Predicciones
                     </Button>
@@ -332,6 +333,7 @@ export const DashboardPage = () => {
 
             {/* Admin Progress (Only visible for Admins) */}
             {role === 'ADMIN' && <AdminProgressWidget stats={stats} />}
+            {role === 'ADMIN' && stats?.adminPodiumDetails && <AdminPodiumDetailsWidget details={stats.adminPodiumDetails} />}
 
             {/* 1. KPIs Principales */}
             <MainKPIs stats={stats} myUsername={user?.user_metadata?.username} updateMyCoins={(amount: number) => {

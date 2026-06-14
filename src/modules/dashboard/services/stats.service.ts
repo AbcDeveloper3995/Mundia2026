@@ -14,6 +14,14 @@ export interface MatchStatsInfo {
   awayScore: number | null;
 }
 
+export interface AdminPodiumDetail {
+  username: string;
+  exactMatchesCount: number;
+  outcomeMatchesCount: number;
+  exactMatchNames: string[];
+  outcomeMatchNames: string[];
+}
+
 export interface DashboardStats {
   hasCompletedQuiniela: boolean;
   // Main KPIs
@@ -68,6 +76,7 @@ export interface DashboardStats {
     pendingUsers: { username: string; missing: string }[];
     completedUsers: string[];
   };
+  adminPodiumDetails?: AdminPodiumDetail[];
 }
 
 export const fetchDashboardStats = async (userId: string): Promise<DashboardStats> => {
@@ -140,9 +149,11 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
 
   // Agrupar predicciones terminadas por usuario para facilitar cálculos
   const userStats: Record<string, { total: number; exact: number; correct: number; partial: number; loss: number; casiCasi: number; eliminatoriasPoints: number; currentStreak: number }> = {};
+  const userMatchDetails: Record<string, { exactMatches: string[], outcomeMatches: string[] }> = {};
   
   leaderboard.forEach(entry => {
     userStats[entry.userId] = { total: 0, exact: 0, correct: 0, partial: 0, loss: 0, casiCasi: 0, eliminatoriasPoints: 0, currentStreak: 0 };
+    userMatchDetails[entry.userId] = { exactMatches: [], outcomeMatches: [] };
   });
 
   const sortedFinishedMatches = matches
@@ -171,10 +182,16 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
         const predWinner = p.predicted_home_score > p.predicted_away_score ? 'HOME' : p.predicted_home_score < p.predicted_away_score ? 'AWAY' : 'DRAW';
         const isCorrect = actualWinner === predWinner;
 
+        const homeName = teams.find(t => t.id === match.home_team_id)?.name || 'TBD';
+        const awayName = teams.find(t => t.id === match.away_team_id)?.name || 'TBD';
+        const matchName = `${homeName} vs ${awayName}`;
+
         if (isExact) {
           userStats[p.user_id].exact++;
+          userMatchDetails[p.user_id].exactMatches.push(matchName);
         } else if (isCorrect) {
           userStats[p.user_id].partial++;
+          userMatchDetails[p.user_id].outcomeMatches.push(matchName);
         } else {
           userStats[p.user_id].loss++;
         }
@@ -562,6 +579,14 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     }
   });
 
+  const adminPodiumDetails: AdminPodiumDetail[] = podium.map(entry => ({
+    username: entry.username,
+    exactMatchesCount: userMatchDetails[entry.userId]?.exactMatches.length || 0,
+    outcomeMatchesCount: userMatchDetails[entry.userId]?.outcomeMatches.length || 0,
+    exactMatchNames: userMatchDetails[entry.userId]?.exactMatches || [],
+    outcomeMatchNames: userMatchDetails[entry.userId]?.outcomeMatches || []
+  }));
+
   const hasCompletedQuiniela = matches.length > 0 && myPredictions.length >= matches.length;
 
   return {
@@ -597,6 +622,7 @@ export const fetchDashboardStats = async (userId: string): Promise<DashboardStat
     podium,
     hardestMatch,
     easiestMatch,
-    adminProgress
+    adminProgress,
+    adminPodiumDetails
   };
 };

@@ -67,7 +67,7 @@ export const SpyStoreModal = ({ open, onClose, targetId, targetName, userId, use
   };
 
   const handleView = async (tierId: string) => {
-    if (activeTiers[tierId] === true || acceptedRequests[tierId]) {
+    if (isAdmin || activeTiers[tierId] === true || acceptedRequests[tierId]) {
       setViewingTier(tierId);
     } else {
       try {
@@ -106,7 +106,7 @@ export const SpyStoreModal = ({ open, onClose, targetId, targetName, userId, use
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {TIERS.map(tier => {
                 const isPending = pendingRequests[tier.id];
-                const hasAccess = activeTiers[tier.id] === true || acceptedRequests[tier.id];
+                const hasAccess = isAdmin || activeTiers[tier.id] === true || acceptedRequests[tier.id];
 
                 return (
                   <Paper key={tier.id} sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid', borderColor: hasAccess ? 'primary.main' : 'rgba(255,255,255,0.05)', borderRadius: 3, transition: 'all 0.2s', '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' } }}>
@@ -147,7 +147,9 @@ export const SpyStoreModal = ({ open, onClose, targetId, targetName, userId, use
           open={!!viewingTier} 
           onClose={async () => {
             setViewingTier(null);
-            await consumeSpyAccess(userId, targetId, viewingTier);
+            if (!isAdmin) {
+              await consumeSpyAccess(userId, targetId, viewingTier);
+            }
             loadActiveSpies();
           }} 
           targetId={targetId} 

@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 
 export const PredictionsPage = () => {
   const { user, role } = useAuthStore();
-  const isSpecialUser = role === 'ADMIN' || user?.user_metadata?.username === 'SirRuben30' || user?.user_metadata?.username === 'Fabian' || user?.user_metadata?.username === 'miri' || user?.user_metadata?.username === 'Douglas' || user?.user_metadata?.username === 'douglas';
+  const isSpecialUser = role === 'ADMIN' || user?.user_metadata?.username === 'Douglas' || user?.user_metadata?.username === 'douglas';
   const [matches, setMatches] = useState<Match[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -43,11 +43,14 @@ export const PredictionsPage = () => {
       setPredictions(predsData);
       if (awardsData) {
         setAwards(awardsData);
-        if (!isSpecialUser && (awardsData.top_scorer || awardsData.top_assist || awardsData.mvp)) {
-          setAwardsLocked(true);
-        }
+      } else {
+        setAwards({ user_id: userId, top_scorer: '', top_assist: '', mvp: '' });
       }
-      else setAwards({ user_id: userId, top_scorer: '', top_assist: '', mvp: '' });
+      
+      // TORNEO INICIADO: Bloqueo global de premios para usuarios regulares
+      if (!isSpecialUser) {
+        setAwardsLocked(true);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -121,10 +124,8 @@ export const PredictionsPage = () => {
 
   const isQuinielaSaved = useMemo(() => {
     if (isSpecialUser) return false;
-    if (matches.length === 0) return false;
-    const savedCount = predictions.filter(p => p.id && !p.id.startsWith('temp-')).length;
-    return isSavedSession || savedCount === matches.length;
-  }, [matches, predictions, isSavedSession, isSpecialUser]);
+    return true; // TORNEO INICIADO: Bloqueo global de predicciones
+  }, [isSpecialUser]);
 
   const handleSaveAwards = async () => {
     try {
