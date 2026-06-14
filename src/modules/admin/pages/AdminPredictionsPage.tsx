@@ -91,8 +91,8 @@ export const AdminPredictionsPage = () => {
       awayTeamName: aTeam?.name || 'TBD',
       homeScore: pred?.predicted_home_score !== undefined && pred?.predicted_home_score !== -1 ? pred.predicted_home_score.toString() : '',
       awayScore: pred?.predicted_away_score !== undefined && pred?.predicted_away_score !== -1 ? pred.predicted_away_score.toString() : '',
-      homeTeamId: hTeamId,
-      awayTeamId: aTeamId
+      homeTeamId: hTeamId || undefined,
+      awayTeamId: aTeamId || undefined
     });
     setEditModalOpen(true);
   };
@@ -240,7 +240,8 @@ export const AdminPredictionsPage = () => {
                   type="number" 
                   value={editingPred.homeScore} 
                   onChange={e => setEditingPred({...editingPred, homeScore: e.target.value})}
-                  inputProps={{ min: 0, style: { textAlign: 'center', fontWeight: 900, fontSize: '1.5rem' } }}
+                  slotProps={{ htmlInput: { min: 0 } }}
+                  sx={{ '& input': { textAlign: 'center', fontWeight: 900, fontSize: '1.5rem' } }}
                 />
               </Box>
               <Typography variant="h5" sx={{ fontWeight: 900, color: 'text.secondary' }}>-</Typography>
@@ -250,7 +251,8 @@ export const AdminPredictionsPage = () => {
                   type="number" 
                   value={editingPred.awayScore} 
                   onChange={e => setEditingPred({...editingPred, awayScore: e.target.value})}
-                  inputProps={{ min: 0, style: { textAlign: 'center', fontWeight: 900, fontSize: '1.5rem' } }}
+                  slotProps={{ htmlInput: { min: 0 } }}
+                  sx={{ '& input': { textAlign: 'center', fontWeight: 900, fontSize: '1.5rem' } }}
                 />
               </Box>
             </Box>
