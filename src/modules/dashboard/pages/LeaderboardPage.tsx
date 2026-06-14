@@ -17,6 +17,7 @@ import { SpyStoreModal } from '../components/SpyStoreModal';
 
 export const LeaderboardPage = () => {
   const { user, role } = useAuthStore();
+  const canSeeColumns = role === 'ADMIN' || user?.user_metadata?.username === 'miri';
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -180,23 +181,25 @@ export const LeaderboardPage = () => {
         )}
       </AnimatePresence>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, minHeight: 36 }}>
-        {unlockedStreaks && expireTime ? (
-          <CountdownTimer targetDate={expireTime} onExpire={() => setUnlockedStreaks(false)} />
-        ) : !unlockedStreaks && !checkingStreaks && (
-          <Button 
-            variant="contained" 
-            color="warning" 
-            size="small" 
-            onClick={handleUnlockStreaks} 
-            disabled={buyingStreaks} 
-            startIcon={buyingStreaks ? <CircularProgress size={16} color="inherit" /> : <LockIcon />} 
-            sx={{ fontWeight: 800, borderRadius: 2 }}
-          >
-            {buyingStreaks ? 'Procesando...' : 'Revelar Rachas (10 MC)'}
-          </Button>
-        )}
-      </Box>
+      {canSeeColumns && (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, minHeight: 36 }}>
+          {unlockedStreaks && expireTime ? (
+            <CountdownTimer targetDate={expireTime} onExpire={() => setUnlockedStreaks(false)} />
+          ) : !unlockedStreaks && !checkingStreaks && (
+            <Button 
+              variant="contained" 
+              color="warning" 
+              size="small" 
+              onClick={handleUnlockStreaks} 
+              disabled={buyingStreaks} 
+              startIcon={buyingStreaks ? <CircularProgress size={16} color="inherit" /> : <LockIcon />} 
+              sx={{ fontWeight: 800, borderRadius: 2 }}
+            >
+              {buyingStreaks ? 'Procesando...' : 'Revelar Rachas (10 MC)'}
+            </Button>
+          )}
+        </Box>
+      )}
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <TableContainer 
@@ -215,21 +218,25 @@ export const LeaderboardPage = () => {
               <TableRow>
                 <TableCell sx={{ fontWeight: 800, width: { xs: 50, sm: 100 }, textAlign: 'center', py: { xs: 1.5, sm: 3 }, px: { xs: 1, sm: 2 }, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontSize: { xs: '0.65rem', sm: '0.85rem' } }}>Pos</TableCell>
                 <TableCell sx={{ fontWeight: 800, py: { xs: 1.5, sm: 3 }, px: { xs: 1, sm: 2 }, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontSize: { xs: '0.65rem', sm: '0.85rem' } }}>Participante</TableCell>
-                <TableCell sx={{ fontWeight: 800, textAlign: 'center', py: { xs: 1.5, sm: 3 }, px: { xs: 1, sm: 2 }, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontSize: { xs: '0.65rem', sm: '0.85rem' } }}>
-                  Racha {!unlockedStreaks && <LockIcon sx={{ fontSize: 14, ml: 0.5, verticalAlign: 'middle', color: 'warning.main' }} />}
-                </TableCell>
+                {canSeeColumns && (
+                  <TableCell sx={{ fontWeight: 800, textAlign: 'center', py: { xs: 1.5, sm: 3 }, px: { xs: 1, sm: 2 }, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1, fontSize: { xs: '0.65rem', sm: '0.85rem' } }}>
+                    Racha {!unlockedStreaks && <LockIcon sx={{ fontSize: 14, ml: 0.5, verticalAlign: 'middle', color: 'warning.main' }} />}
+                  </TableCell>
+                )}
                 <TableCell sx={{ fontWeight: 800, textAlign: 'right', py: { xs: 1.5, sm: 3 }, px: { xs: 1, sm: 2 }, color: 'primary.main', textTransform: 'uppercase', letterSpacing: 1, fontSize: { xs: '0.65rem', sm: '0.85rem' } }}>Puntos</TableCell>
-                <TableCell sx={{ fontWeight: 800, textAlign: 'right', py: { xs: 1.5, sm: 3 }, px: { xs: 1, sm: 2 }, color: '#ffc107', textTransform: 'uppercase', letterSpacing: 1, fontSize: { xs: '0.65rem', sm: '0.85rem' } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-                    <MonetizationOnIcon sx={{ fontSize: 16 }} /> <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Saldo MC</Box>
-                  </Box>
-                </TableCell>
+                {canSeeColumns && (
+                  <TableCell sx={{ fontWeight: 800, textAlign: 'right', py: { xs: 1.5, sm: 3 }, px: { xs: 1, sm: 2 }, color: '#ffc107', textTransform: 'uppercase', letterSpacing: 1, fontSize: { xs: '0.65rem', sm: '0.85rem' } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                      <MonetizationOnIcon sx={{ fontSize: 16 }} /> <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Saldo MC</Box>
+                    </Box>
+                  </TableCell>
+                )}
               </TableRow>
             </TableHead>
             <TableBody>
               {leaderboard.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+                  <TableCell colSpan={canSeeColumns ? 5 : 3} sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
                     Aún no hay puntos registrados. ¡Empieza a predecir!
                   </TableCell>
                 </TableRow>
@@ -252,9 +259,6 @@ export const LeaderboardPage = () => {
                     >
                       <TableCell sx={{ textAlign: 'center', fontWeight: 900, fontSize: idx < 3 ? { xs: '1.1rem', sm: '1.3rem' } : { xs: '0.9rem', sm: '1.1rem' }, color: idx === 0 ? '#ffd700' : idx === 1 ? '#e0e0e0' : idx === 2 ? '#cd7f32' : 'text.secondary' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 0.2, sm: 0.5 } }}>
-                          {entry.trend === 'UP' && <ArrowDropUpIcon color="success" sx={{ fontSize: { xs: 18, sm: 24 } }} />}
-                          {entry.trend === 'DOWN' && <ArrowDropDownIcon color="error" sx={{ fontSize: { xs: 18, sm: 24 } }} />}
-                          {entry.trend === 'SAME' && <RemoveIcon sx={{ color: 'text.disabled', fontSize: { xs: 12, sm: 16 } }} />}
                           {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
                         </Box>
                       </TableCell>
@@ -294,32 +298,36 @@ export const LeaderboardPage = () => {
                           })()}
                         </Box>
                       </TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                          {unlockedStreaks ? (
-                            (entry.recentForm || []).map((status, i) => (
-                              <Tooltip key={i} title={status !== 'LOSS' ? 'Sumó puntos' : 'No sumó puntos'}>
-                                <Box sx={{ 
-                                  width: 12, height: 12, borderRadius: '50%',
-                                  bgcolor: status !== 'LOSS' ? '#00e676' : '#f44336',
-                                  border: '1px solid rgba(0,0,0,0.5)',
-                                  boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                                }} />
-                              </Tooltip>
-                            ))
-                          ) : (
-                            <Typography variant="caption" sx={{ color: 'text.disabled', opacity: 0.5 }}>---</Typography>
-                          )}
-                        </Box>
-                      </TableCell>
+                      {canSeeColumns && (
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                            {unlockedStreaks ? (
+                              (entry.recentForm || []).map((status, i) => (
+                                <Tooltip key={i} title={status !== 'LOSS' ? 'Sumó puntos' : 'No sumó puntos'}>
+                                  <Box sx={{ 
+                                    width: 12, height: 12, borderRadius: '50%',
+                                    bgcolor: status !== 'LOSS' ? '#00e676' : '#f44336',
+                                    border: '1px solid rgba(0,0,0,0.5)',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                                  }} />
+                                </Tooltip>
+                              ))
+                            ) : (
+                              <Typography variant="caption" sx={{ color: 'text.disabled', opacity: 0.5 }}>---</Typography>
+                            )}
+                          </Box>
+                        </TableCell>
+                      )}
                       <TableCell sx={{ textAlign: 'right', fontWeight: 900, fontSize: { xs: '1rem', sm: '1.2rem' }, color: 'primary.main' }}>
                         {entry.totalPoints} <Typography component="span" sx={{ display: { xs: 'none', sm: 'inline' }, fontSize: '0.8rem', color: 'text.secondary', fontWeight: 600 }}>pts</Typography>
                       </TableCell>
-                      <TableCell sx={{ textAlign: 'right', fontWeight: 900, fontSize: { xs: '1rem', sm: '1.2rem' }, color: '#ffc107' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-                          {entry.coins} <MonetizationOnIcon sx={{ fontSize: { xs: 14, sm: 18 } }} />
-                        </Box>
-                      </TableCell>
+                      {canSeeColumns && (
+                        <TableCell sx={{ textAlign: 'right', fontWeight: 900, fontSize: { xs: '1rem', sm: '1.2rem' }, color: '#ffc107' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                            {entry.coins} <MonetizationOnIcon sx={{ fontSize: { xs: 14, sm: 18 } }} />
+                          </Box>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })

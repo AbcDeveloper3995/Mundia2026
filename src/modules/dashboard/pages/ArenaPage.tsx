@@ -60,7 +60,8 @@ export const ArenaPage = () => {
       }
 
       setChallenges(challengesData);
-      setUsers((profilesData as any[]).filter(u => u.id !== user.id)); // exclude self
+      const adminUsernames = ['änthuan', 'anthuan', 'SirRuben30', 'admin', 'Admin'];
+      setUsers((profilesData as any[]).filter(u => u.id !== user.id && (u.username === 'miri' || adminUsernames.includes(u.username))));
       
       const today = new Date();
       const yy = today.getFullYear();

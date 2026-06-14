@@ -22,6 +22,7 @@ import { CountdownTimer } from '../components/CountdownTimer';
 
 export const DashboardPage = () => {
   const { user, role } = useAuthStore();
+  const canSeeBanner = role === 'ADMIN' || user?.user_metadata?.username === 'miri';
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -103,48 +104,52 @@ export const DashboardPage = () => {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
 
         {/* Controles del Banner */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, mb: 1 }}>
-          {bannerExpiration && Date.now() < bannerExpiration && (
-            <CountdownTimer targetDate={bannerExpiration} onExpire={() => setBannerExpiration(null)} />
-          )}
-          <Button
-            variant="outlined"
-            color="warning"
-            onClick={() => setHijackModalOpen(true)}
-            disabled={!!bannerExpiration && Date.now() < bannerExpiration}
-            startIcon={<NotificationsActiveIcon />}
-            size="small"
-            sx={{ borderRadius: 4, fontWeight: 800, textTransform: 'none' }}
-          >
-            Secuestrar Banner (20 MC)
-          </Button>
-        </Box>
+        {canSeeBanner && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, mb: 1 }}>
+            {bannerExpiration && Date.now() < bannerExpiration && (
+              <CountdownTimer targetDate={bannerExpiration} onExpire={() => setBannerExpiration(null)} />
+            )}
+            <Button
+              variant="outlined"
+              color="warning"
+              onClick={() => setHijackModalOpen(true)}
+              disabled={!!bannerExpiration && Date.now() < bannerExpiration}
+              startIcon={<NotificationsActiveIcon />}
+              size="small"
+              sx={{ borderRadius: 4, fontWeight: 800, textTransform: 'none' }}
+            >
+              Secuestrar Banner (20 MC)
+            </Button>
+          </Box>
+        )}
 
         {/* Marquee Banner */}
-        <Box sx={{
-          width: '100%',
-          overflow: 'hidden',
-          bgcolor: 'error.main',
-          color: 'white',
-          py: 1.5, mb: 4, borderRadius: 2,
-          whiteSpace: 'nowrap',
-          alignItems: 'center',
-          boxShadow: '0 4px 20px rgba(211,47,47,0.4)',
-        }}>
-          <Typography variant="h6" sx={{
-            fontWeight: 900,
-            textTransform: 'uppercase',
-            letterSpacing: 2,
-            display: 'inline-block',
-            animation: 'marquee 12s linear infinite',
-            '@keyframes marquee': {
-              '0%': { transform: 'translateX(100vw)' },
-              '100%': { transform: 'translateX(-100%)' }
-            }
+        {canSeeBanner && (
+          <Box sx={{
+            width: '100%',
+            overflow: 'hidden',
+            bgcolor: 'error.main',
+            color: 'white',
+            py: 1.5, mb: 4, borderRadius: 2,
+            whiteSpace: 'nowrap',
+            alignItems: 'center',
+            boxShadow: '0 4px 20px rgba(211,47,47,0.4)',
           }}>
-            {bannerMessage}
-          </Typography>
-        </Box>
+            <Typography variant="h6" sx={{
+              fontWeight: 900,
+              textTransform: 'uppercase',
+              letterSpacing: 2,
+              display: 'inline-block',
+              animation: 'marquee 12s linear infinite',
+              '@keyframes marquee': {
+                '0%': { transform: 'translateX(100vw)' },
+                '100%': { transform: 'translateX(-100%)' }
+              }
+            }}>
+              {bannerMessage}
+            </Typography>
+          </Box>
+        )}
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 6 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column' }}>
@@ -153,7 +158,7 @@ export const DashboardPage = () => {
                 Bienvenido, {user?.user_metadata?.username}
               </Typography>
             </Box>
-            {stats && (
+            {canSeeBanner && stats && (
               <Box sx={{ mt: 1.5, display: 'inline-flex', alignItems: 'center', gap: 1, width: 'fit-content' }}>
                 {(stats.hasCompletedQuiniela || role === 'ADMIN') ? (
                   <Box sx={{ display: 'inline-flex', alignItems: 'center', bgcolor: 'rgba(255, 193, 7, 0.1)', border: '1px solid #ffc107', borderRadius: 2, px: 2, py: 0.5, gap: 1 }}>
@@ -227,21 +232,23 @@ export const DashboardPage = () => {
                     Clasificación
                   </Button>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  {stats && (role === 'ADMIN' || (stats.hasCompletedQuiniela && stats.myCoins >= 50)) ? (
-                    <Button fullWidth component={RouterLink} to="/dashboard/arena" variant="contained" color="warning" sx={{ fontWeight: 800 }}>
-                      La Arena ⚔️
-                    </Button>
-                  ) : (
-                    <Tooltip title={!stats?.hasCompletedQuiniela ? "Completa y guarda toda tu quiniela para recibir tus MC y desbloquear La Arena" : "Necesitas al menos 50 MC para desbloquear La Arena"}>
-                      <span>
-                        <Button fullWidth disabled variant="contained" sx={{ fontWeight: 800, bgcolor: 'rgba(255, 152, 0, 0.2) !important', color: 'rgba(255,255,255,0.4) !important' }}>
-                          La Arena 🔒 (Mín. 50 MC)
-                        </Button>
-                      </span>
-                    </Tooltip>
-                  )}
-                </Grid>
+                {canSeeBanner && (
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    {stats && (role === 'ADMIN' || (stats.hasCompletedQuiniela && stats.myCoins >= 50)) ? (
+                      <Button fullWidth component={RouterLink} to="/dashboard/arena" variant="contained" color="warning" sx={{ fontWeight: 800 }}>
+                        La Arena ⚔️
+                      </Button>
+                    ) : (
+                      <Tooltip title={!stats?.hasCompletedQuiniela ? "Completa y guarda toda tu quiniela para recibir tus MC y desbloquear La Arena" : "Necesitas al menos 50 MC para desbloquear La Arena"}>
+                        <span>
+                          <Button fullWidth disabled variant="contained" sx={{ fontWeight: 800, bgcolor: 'rgba(255, 152, 0, 0.2) !important', color: 'rgba(255,255,255,0.4) !important' }}>
+                            La Arena 🔒 (Mín. 50 MC)
+                          </Button>
+                        </span>
+                      </Tooltip>
+                    )}
+                  </Grid>
+                )}
               </Grid>
             </Paper>
           </Grid>
@@ -329,24 +336,28 @@ export const DashboardPage = () => {
             {/* 1. KPIs Principales */}
             <MainKPIs stats={stats} myUsername={user?.user_metadata?.username} updateMyCoins={(amount: number) => {
               if (stats) setStats({ ...stats, myCoins: stats.myCoins + amount });
-            }} />
+            }} canSeeRivalry={canSeeBanner} />
 
             {/* Favoritos */}
             <FavoritesKPIs stats={stats} />
 
             {/* 2. Estadísticas Divertidas (Salón de la fama) */}
-            <FunStats stats={stats} updateMyCoins={(amount: number) => {
-              if (stats) setStats({ ...stats, myCoins: stats.myCoins + amount });
-            }} />
+            {canSeeBanner && (
+              <FunStats stats={stats} updateMyCoins={(amount: number) => {
+                if (stats) setStats({ ...stats, myCoins: stats.myCoins + amount });
+              }} />
+            )}
 
             {/* 3. Comparaciones y Widgets */}
-            <Grid container spacing={4}>
-              <Grid size={{ xs: 12, lg: 12 }}  >
-                <GlobalWidgets stats={stats} updateMyCoins={(amount: number) => {
-                  if (stats) setStats({ ...stats, myCoins: stats.myCoins + amount });
-                }} />
+            {canSeeBanner && (
+              <Grid container spacing={4}>
+                <Grid size={{ xs: 12, lg: 12 }}  >
+                  <GlobalWidgets stats={stats} updateMyCoins={(amount: number) => {
+                    if (stats) setStats({ ...stats, myCoins: stats.myCoins + amount });
+                  }} />
+                </Grid>
               </Grid>
-            </Grid>
+            )}
           </Box>
         ) : null}
 

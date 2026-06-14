@@ -350,18 +350,7 @@ export const PredictionsPage = () => {
                     <Typography variant="body2" sx={{ color: total > 0 ? 'success.main' : 'error.main', fontWeight: 800 }}>
                       Puntos Obtenidos: {total}
                     </Typography>
-                    {isLocked && (
-                      <Box sx={{ 
-                        px: 1.5, py: 0.5, borderRadius: 2, 
-                        bgcolor: total === 5 ? 'rgba(0,230,118,0.2)' : total >= 3 ? 'rgba(0,230,118,0.1)' : 'rgba(239,68,68,0.2)',
-                        border: '1px solid',
-                        borderColor: total === 5 ? 'success.main' : total >= 3 ? 'success.light' : 'error.main'
-                      }}>
-                        <Typography variant="caption" sx={{ fontWeight: 900, color: total >= 3 ? 'success.main' : 'error.main' }}>
-                          {total === 5 ? '+50' : total >= 3 ? '+20' : '-10'} MC
-                        </Typography>
-                      </Box>
-                    )}
+                    {/* Indicator removed per user request */}
                   </Box>
                 ) : (
                   <Typography variant="caption" color="text.secondary">

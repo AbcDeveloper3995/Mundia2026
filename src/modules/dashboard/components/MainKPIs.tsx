@@ -9,9 +9,10 @@ interface MainKPIsProps {
   stats: any; // DashboardStats
   myUsername?: string;
   updateMyCoins: (amount: number) => void;
+  canSeeRivalry?: boolean;
 }
 
-export const MainKPIs = ({ stats, myUsername, updateMyCoins }: MainKPIsProps) => {
+export const MainKPIs = ({ stats, myUsername, updateMyCoins, canSeeRivalry = true }: MainKPIsProps) => {
   return (
     <Box sx={{ mb: 4 }}>
       <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 800, mb: 3 }}>
@@ -91,11 +92,13 @@ export const MainKPIs = ({ stats, myUsername, updateMyCoins }: MainKPIsProps) =>
         </Grid>
 
         {/* ROW 2: Rivalidad */}
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}  >
-          <motion.div whileHover={{ y: -5 }} style={{ height: '100%' }}>
-            <RivalryWidget stats={stats} myUsername={myUsername || 'Tú'} updateMyCoins={updateMyCoins} />
-          </motion.div>
-        </Grid>
+        {canSeeRivalry && (
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}  >
+            <motion.div whileHover={{ y: -5 }} style={{ height: '100%' }}>
+              <RivalryWidget stats={stats} myUsername={myUsername || 'Tú'} updateMyCoins={updateMyCoins} />
+            </motion.div>
+          </Grid>
+        )}
 
       </Grid>
     </Box>
