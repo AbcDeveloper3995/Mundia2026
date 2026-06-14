@@ -32,7 +32,7 @@ export const AdminPodiumDetailsWidget = ({ details }: Props) => {
           </AccordionSummary>
           <AccordionDetails>
             <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Paper sx={{ p: 2, bgcolor: 'rgba(0, 230, 118, 0.05)', borderRadius: 2, height: '100%' }}>
                   <Typography variant="subtitle2" color="success.main" sx={{ fontWeight: 900, mb: 1 }}>
                     Marcadores Exactos ({user.exactMatchesCount})
@@ -42,7 +42,7 @@ export const AdminPodiumDetailsWidget = ({ details }: Props) => {
                       {user.exactMatchNames.map((match, i) => (
                         <ListItem key={i} disablePadding sx={{ mb: 0.5 }}>
                           <ListItemIcon sx={{ minWidth: 28 }}><CheckCircleIcon color="success" sx={{ fontSize: 16 }} /></ListItemIcon>
-                          <ListItemText primary={match} primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                          <ListItemText primary={match} sx={{ '& .MuiListItemText-primary': { fontSize: '0.85rem' } }} />
                         </ListItem>
                       ))}
                     </List>
@@ -51,7 +51,7 @@ export const AdminPodiumDetailsWidget = ({ details }: Props) => {
                   )}
                 </Paper>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Paper sx={{ p: 2, bgcolor: 'rgba(3, 169, 244, 0.05)', borderRadius: 2, height: '100%' }}>
                   <Typography variant="subtitle2" color="info.main" sx={{ fontWeight: 900, mb: 1 }}>
                     Marcadores Acertados ({user.outcomeMatchesCount})
@@ -61,7 +61,7 @@ export const AdminPodiumDetailsWidget = ({ details }: Props) => {
                       {user.outcomeMatchNames.map((match, i) => (
                         <ListItem key={i} disablePadding sx={{ mb: 0.5 }}>
                           <ListItemIcon sx={{ minWidth: 28 }}><CheckCircleIcon color="info" sx={{ fontSize: 16 }} /></ListItemIcon>
-                          <ListItemText primary={match} primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                          <ListItemText primary={match} sx={{ '& .MuiListItemText-primary': { fontSize: '0.85rem' } }} />
                         </ListItem>
                       ))}
                     </List>

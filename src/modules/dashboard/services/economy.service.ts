@@ -233,7 +233,7 @@ export const respondSpyRequest = async (requestId: string, status: 'accepted' | 
     if (!unlocks[req.requesterId].spies![req.targetId]) unlocks[req.requesterId].spies![req.targetId] = {};
     
     // Set to true for permanent (until consumed)
-    unlocks[req.requesterId].spies![req.targetId][req.tierId as any] = true;
+    unlocks[req.requesterId].spies![req.targetId][req.tierId as 'recent' | 'groups' | 'knockouts' | 'awards'] = true;
     updates.push({ key: 'user_unlocks', value: JSON.stringify(unlocks) });
   }
 
@@ -244,8 +244,8 @@ export const consumeSpyAccess = async (userId: string, targetId: string, tierId:
   const settings = await fetchGlobalSettings();
   let unlocks = settings.user_unlocks;
 
-  if (unlocks[userId]?.spies?.[targetId]?.[tierId as any]) {
-    unlocks[userId].spies![targetId][tierId as any] = false; // consume it
+  if (unlocks[userId]?.spies?.[targetId]?.[tierId as 'recent' | 'groups' | 'knockouts' | 'awards']) {
+    unlocks[userId].spies![targetId][tierId as 'recent' | 'groups' | 'knockouts' | 'awards'] = false; // consume it
     await supabase.from('global_settings').upsert({ key: 'user_unlocks', value: JSON.stringify(unlocks) });
   }
 };
