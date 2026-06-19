@@ -265,9 +265,6 @@ export const DashboardPage = () => {
                   }} variant="contained" color="warning" sx={{ fontWeight: 800 }}>
                     Limpiar Espionajes
                   </Button>
-                  <Button component={RouterLink} to="/dashboard/admin-predictions" variant="contained" color="secondary" sx={{ fontWeight: 800 }}>
-                    Editar Predicciones (Admin/Miri)
-                  </Button>
                 </Box>
               </Paper>
             </Grid>

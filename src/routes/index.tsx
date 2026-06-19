@@ -12,7 +12,6 @@ import { ResultsPage } from '@/modules/dashboard/pages/ResultsPage';
 import { PredictionsPage } from '@/modules/dashboard/pages/PredictionsPage';
 import { LeaderboardPage } from '@/modules/dashboard/pages/LeaderboardPage';
 import { ArenaPage } from '@/modules/dashboard/pages/ArenaPage';
-import { AdminPredictionsPage } from '@/modules/admin/pages/AdminPredictionsPage';
 import { Box, CircularProgress } from '@mui/material';
 
 const ProtectedRoute = () => {
@@ -102,7 +101,6 @@ const router = createBrowserRouter([
               { path: 'groups', element: <GroupsManager /> },
               { path: 'teams', element: <TeamsManager /> },
               { path: 'matches', element: <MatchesManager /> },
-              { path: 'admin-predictions', element: <AdminPredictionsPage /> },
             ] 
           }
         ],
